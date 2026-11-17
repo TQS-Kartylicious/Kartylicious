@@ -1,7 +1,9 @@
 # AGENTS.md
 
 ## Project
-Light-mobility fleet-as-a-service. Backend: Spring Boot, Java 21. Frontend: <your stack>.
+Light-mobility fleet-as-a-service. 
+- **Backend:** Spring Boot, Java 21. 
+- **Frontend:** <your stack>.
 
 ## Build and test commands
 - Build: `./mvnw clean verify`
@@ -10,9 +12,11 @@ Light-mobility fleet-as-a-service. Backend: Spring Boot, Java 21. Frontend: <you
 - Run locally: `docker compose up`
 
 ## Code style
-- Follow the conventions in CONTRIBUTING.md
-- Constructor injection, no field `@Autowired`
-- Business logic in services, not controllers
+- Follow all conventions in `CONTRIBUTING.md` and Section 3.1 of the Quality Manual.
+- Follow the Google Java Style Guide for backend code and ESLint/Prettier for frontend code.
+- Use constructor injection exclusively; no field `@Autowired`.
+- Keep business logic and transactional boundaries in services, not controllers.
+- Isolate external dependencies behind ports.
 
 ## Definition of done
 - Unit tests for new business logic
