@@ -11,7 +11,7 @@ Light-mobility fleet-as-a-service.
 - Integration tests: `./mvnw verify -Pintegration`
 - Run locally: `docker compose up`
 
-## Code style
+## Code Style & Design Rules
 - Follow all conventions in `CONTRIBUTING.md` and Section 3.1 of the Quality Manual.
 - Follow the Google Java Style Guide for backend code and ESLint/Prettier for frontend code.
 - Use constructor injection exclusively; no field `@Autowired`.
