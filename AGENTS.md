@@ -1,7 +1,9 @@
 # AGENTS.md
 
 ## Project
-Light-mobility fleet-as-a-service. Backend: Spring Boot, Java 21. - **Backend:** Java 21, Spring Boot, Maven (`./mvnw`)
+Light-mobility fleet-as-a-service. 
+- **Backend:** Spring Boot, Java 21. 
+- **Frontend:** <your stack>.
 
 ## Build and test commands
 - Build: `./mvnw clean verify`
