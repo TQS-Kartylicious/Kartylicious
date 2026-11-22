@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
 
       - name: Upload test results to Xray
         if: always()
-        continue-on-error: true   # remove later, once the upload is proven to work
+        continue-on-error: true 
         uses: mikepenz/xray-action@v3
         with:
           username: ${{ secrets.XRAY_CLIENT_ID }}
