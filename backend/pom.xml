@@ -161,6 +161,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<configuration>
+					<forkedProcessExitTimeoutInSeconds>5</forkedProcessExitTimeoutInSeconds>
 					<excludes>
 						<exclude>**/*PlaywrightIT.java</exclude>
 					</excludes>
