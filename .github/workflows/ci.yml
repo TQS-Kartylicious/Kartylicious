@@ -20,3 +20,15 @@ jobs:
       - name: Build and test
         run: ./mvnw -B verify
         working-directory: backend
+
+      - name: Upload test results to Xray
+        if: always()
+        continue-on-error: true   # remove later, once the upload is proven to work
+        uses: mikepenz/xray-action@v3
+        with:
+          username: ${{ secrets.XRAY_CLIENT_ID }}
+          password: ${{ secrets.XRAY_CLIENT_SECRET }}
+          testFormat: junit
+          testPaths: "backend/target/surefire-reports/TEST-*.xml"
+          projectKey: KARTY
+          xrayCloud: true
