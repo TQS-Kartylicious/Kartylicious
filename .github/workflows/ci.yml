@@ -2,20 +2,28 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
       - name: Build and test
         run: ./mvnw -B verify
@@ -23,7 +31,7 @@ jobs:
 
       - name: Upload test results to Xray
         if: always()
-        continue-on-error: true   # remove later, once the upload is proven to work
+        continue-on-error: true
         uses: mikepenz/xray-action@v3
         with:
           username: ${{ secrets.XRAY_CLIENT_ID }}
@@ -32,3 +40,16 @@ jobs:
           testPaths: "backend/target/surefire-reports/TEST-*.xml"
           projectKey: KARTY
           xrayCloud: true
+
+      - name: Authenticate with SonarQube
+        uses: SonarSource/sonarqube-auth-action@v1.2
+
+      - name: SonarQube Analysis
+        working-directory: backend
+        run: >
+          ./mvnw -B
+          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.organization=tqs-kartylicious
+          -Dsonar.projectKey=TQS-Kartylicious_Kartylicious
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.qualitygate.wait=true
