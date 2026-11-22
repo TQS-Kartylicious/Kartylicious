@@ -27,8 +27,7 @@ public class SecurityConfiguration {
                   "ROLE_" + role));
         });
 
-    // NOSONAR - Stateless bearer authentication is not vulnerable to browser CSRF cookies.
-    http.csrf(csrf -> csrf.disable())
+    http.csrf(csrf -> csrf.disable()) // NOSONAR - Stateless bearer auth is not cookie/session based.
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .formLogin(form -> form.disable())
