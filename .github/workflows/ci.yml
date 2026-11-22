@@ -37,7 +37,7 @@ jobs:
           username: ${{ secrets.XRAY_CLIENT_ID }}
           password: ${{ secrets.XRAY_CLIENT_SECRET }}
           testFormat: junit
-          testPaths: "backend/target/surefire-reports/TEST-*.xml"
+          testPaths: "backend/target/xray-reports/TEST-*.xml"
           projectKey: KARTY
           xrayCloud: true
 
