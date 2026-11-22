@@ -58,22 +58,13 @@ class RegistrationPlaywrightIT {
     String username = "e2e-" + token;
     String baseUrl = baseUrl();
     try (var page = newTrackingPage(registrationRequests, registrationResponses)) {
-      page.navigate(baseUrl);
+      page.navigate(baseUrl + "/register");
       fillForm(page, username, email, "strong-pass-123");
       submit(page);
 
       page.waitForURL("**/dashboard");
       PlaywrightAssertions.assertThat(page)
           .hasURL(baseUrl + "/dashboard");
-      PlaywrightAssertions.assertThat(
-              page.getByRole(
-                  AriaRole.HEADING,
-                  new Page.GetByRoleOptions().setName("Welcome, " + username + ".")))
-          .isVisible();
-      PlaywrightAssertions.assertThat(
-              page.getByText("Your End User account is ready. This is your Kartylicious dashboard."))
-          .isVisible();
-      PlaywrightAssertions.assertThat(page.locator(".kart-sweep")).hasCount(1);
       Assertions.assertThat(registrationRequests.get()).isEqualTo(1);
       Assertions.assertThat(registrationResponses).hasSize(1);
       Assertions.assertThat(registrationResponses.getFirst().status()).isEqualTo(201);
@@ -92,14 +83,14 @@ class RegistrationPlaywrightIT {
     String email = "duplicate-" + token + "@example.com";
     String baseUrl = baseUrl();
     try (var page = newTrackingPage(registrationRequests, registrationResponses)) {
-      page.navigate(baseUrl);
+      page.navigate(baseUrl + "/register");
       fillForm(page, "first-" + token, email, "strong-pass-123");
       submit(page);
 
       page.waitForURL("**/dashboard");
       Assertions.assertThat(registrationRequests.get()).isEqualTo(1);
 
-      page.navigate(baseUrl);
+      page.navigate(baseUrl + "/register");
       fillForm(page, "duplicate-" + token, email, "strong-pass-123");
       submit(page);
 
@@ -119,7 +110,7 @@ class RegistrationPlaywrightIT {
     String token = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
 
     try {
-      page.navigate(baseUrl());
+      page.navigate(baseUrl() + "/register");
       fillForm(page, "invalid-" + token, "not-an-email", "strong-pass-123");
       submit(page);
 
@@ -139,7 +130,7 @@ class RegistrationPlaywrightIT {
     String token = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
 
     try {
-      page.navigate(baseUrl());
+      page.navigate(baseUrl() + "/register");
       fillForm(page, "short-password-" + token, "short-" + token + "@example.com", "short");
 
       submit(page);

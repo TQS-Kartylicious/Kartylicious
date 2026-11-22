@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
+import { useAuth } from '../auth/AuthContext.jsx'
 import Brand from './Brand.jsx'
 
 const EMAIL_IN_USE = 'The email is already in use'
 const USERNAME_IN_USE = 'The username is already in use'
 
 function RegistrationPage({ onRegistrationSuccess }) {
+  const { login } = useAuth()
   const [values, setValues] = useState({ username: '', email: '', password: '' })
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState('')
@@ -104,7 +106,12 @@ function RegistrationPage({ onRegistrationSuccess }) {
         return
       }
 
-      onRegistrationSuccess(responseBody?.username || values.username.trim())
+      const loginResult = await login(values.email.trim(), values.password)
+      if (!loginResult.success) {
+        setFormError(loginResult.body?.message || 'We could not log you in. Please try again.')
+        return
+      }
+      onRegistrationSuccess(loginResult.user?.username || values.username.trim())
     } catch {
       setFormError("We couldn't connect to Kartylicious. Please try again.")
     } finally {
@@ -233,6 +240,9 @@ function RegistrationPage({ onRegistrationSuccess }) {
             </button>
             <p className="role-note">
               Your account will be created with the <strong>End User</strong> role.
+            </p>
+            <p className="role-note">
+              Already have an account? <a href="/login">Log in</a>
             </p>
           </form>
         </section>

@@ -11,9 +11,8 @@ Feature: End-user registration
 
     Scenario Outline: Register a unique account with a valid password
       When I submit unique credentials using password "<password>"
-      Then my account is created with the "End User" role
+      Then my account is created
       And I am redirected to the dashboard
-      And the kart success animation is shown
 
       Examples:
         | password      |

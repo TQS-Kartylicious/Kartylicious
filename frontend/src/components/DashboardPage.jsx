@@ -1,6 +1,15 @@
 import Brand from './Brand.jsx'
+import { useAuth } from '../auth/AuthContext.jsx'
 
 function DashboardPage({ username }) {
+  const { logout } = useAuth()
+
+  function handleLogout() {
+    logout()
+    window.history.replaceState({}, '', '/login')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+
   return (
     <div className="page-shell dashboard-shell">
       {username && (
@@ -38,6 +47,9 @@ function DashboardPage({ username }) {
         <a className="dashboard-link" href="/">
           Back to Kartylicious <span aria-hidden="true">↗</span>
         </a>
+        <button className="dashboard-link" type="button" onClick={handleLogout}>
+          Logout
+        </button>
       </main>
 
       <footer className="site-footer">
