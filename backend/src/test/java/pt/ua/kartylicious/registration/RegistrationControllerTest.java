@@ -88,6 +88,46 @@ class RegistrationControllerTest {
 
   @Requirement("KARTY-27")
   @Test
+  void registerRejectsUsernameLongerThan64Characters() throws Exception {
+    var username = "u".repeat(65);
+
+    mockMvc
+        .perform(
+            post("/api/registration")
+                .contentType("application/json")
+                .content(
+                    """
+                    {"username":"%s","email":"kart@example.com","password":"strong-pass-123"}
+                    """
+                        .formatted(username)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.username").value("The username must be at most 64 characters"));
+
+    verifyNoInteractions(registrationService);
+  }
+
+  @Requirement("KARTY-27")
+  @Test
+  void registerRejectsEmailLongerThan254Characters() throws Exception {
+    var email = "usr@" + "abc.".repeat(62) + "abc";
+
+    mockMvc
+        .perform(
+            post("/api/registration")
+                .contentType("application/json")
+                .content(
+                    """
+                    {"username":"kartfan","email":"%s","password":"strong-pass-123"}
+                    """
+                        .formatted(email)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.email").value("The email must be at most 254 characters"));
+
+    verifyNoInteractions(registrationService);
+  }
+
+  @Requirement("KARTY-27")
+  @Test
   void registerRejectsEmptyRequestBodyFieldsRequest() throws Exception {
     mockMvc
         .perform(
