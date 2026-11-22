@@ -1,5 +1,7 @@
 package pt.ua.kartylicious.auth.e2e;
 
+import java.util.UUID;
+
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
@@ -12,12 +14,6 @@ import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.util.Locale;
-import java.util.UUID;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class LoginSteps {
 
@@ -26,6 +22,7 @@ public class LoginSteps {
   private Page page;
   private String email;
   private String password;
+
 
   @Before
   public void startBrowser() {
@@ -45,40 +42,13 @@ public class LoginSteps {
   public void registerAccount() {
     password = "strong-pass-123";
     var token = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
-    var username = "login-" + token;
-    email = ("LOGIN-" + token + "@EXAMPLE.COM").toLowerCase(Locale.ROOT);
-    insertAccountDirectly(username, email, password);
-  }
-
-  private void insertAccountDirectly(String username, String email, String password) {
-    var jdbcUrl =
-        configured("e2e.db.url", "E2E_DB_URL", "jdbc:postgresql://localhost:5432/kartylicious");
-    var databaseUser =
-        configured("e2e.db.username", "E2E_DB_USERNAME", "kartylicious");
-    var databasePassword =
-        configured("e2e.db.password", "E2E_DB_PASSWORD", "change-me");
-    var passwordHash = new BCryptPasswordEncoder().encode(password);
-
-    try (Connection connection =
-            DriverManager.getConnection(jdbcUrl, databaseUser, databasePassword);
-        PreparedStatement statement =
-            connection.prepareStatement(
-                """
-                insert into user_accounts
-                    (id, username, email, password_hash, role)
-                values (?, ?, ?, ?, ?)
-                """)) {
-      statement.setObject(1, UUID.randomUUID());
-      statement.setString(2, username);
-      statement.setString(3, email);
-      statement.setString(4, passwordHash);
-      statement.setString(5, "END_USER");
-      statement.executeUpdate();
-    } catch (Exception exception) {
-      throw new IllegalStateException(
-          "Could not create the synthetic account directly in the E2E database",
-          exception);
-    }
+    email = "login-" + token + "@example.com";
+    page.navigate(baseUrl() + "/register");
+    page.getByLabel("Username").fill("login-" + token);
+    page.getByLabel("Email").fill(email);
+    page.getByLabel("Password").fill(password);
+    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Create account")).click();
+    page.waitForURL("**/dashboard");
   }
 
   @Given("I am on the login screen")
@@ -151,20 +121,8 @@ public class LoginSteps {
   }
 
   private static String baseUrl() {
-    var value = configured("e2e.baseUrl", "E2E_BASE_URL", "http://localhost:3000");
+    var configured = System.getProperty("e2e.baseUrl", System.getenv("E2E_BASE_URL"));
+    var value = configured == null || configured.isBlank() ? "http://localhost:3000" : configured;
     return value.replaceAll("/+$", "");
-  }
-
-  private static String configured(
-      String propertyName, String environmentName, String fallback) {
-    var propertyValue = System.getProperty(propertyName);
-    var environmentValue = System.getenv(environmentName);
-    if (propertyValue != null && !propertyValue.isBlank()) {
-      return propertyValue;
-    }
-    if (environmentValue != null && !environmentValue.isBlank()) {
-      return environmentValue;
-    }
-    return fallback;
   }
 }
