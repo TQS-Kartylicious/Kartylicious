@@ -1,12 +1,12 @@
 ## Jira story
-TQS-XX
+KARTY-XX
 
 ## What changed
 <!-- short description -->
 
 ## Tests
 - [ ] Unit tests added/updated
-- [ ] Integration tests added/updated (if API or DB changed)
+- [ ] Integration tests added/updated (if applicable)
 - [ ] Acceptance criteria met
 
 ## Checklist
