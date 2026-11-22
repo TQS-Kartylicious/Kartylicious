@@ -166,7 +166,15 @@ class RegistrationPlaywrightIT {
     String configured = System.getProperty("e2e.baseUrl", System.getenv("E2E_BASE_URL"));
     String baseUrl =
         configured == null || configured.isBlank() ? "http://localhost:3000" : configured;
-    return baseUrl.replaceAll("/+$", "");
+    return removeTrailingSlashes(baseUrl);
+  }
+
+  private static String removeTrailingSlashes(String value) {
+    var result = value;
+    while (result.endsWith("/")) {
+      result = result.substring(0, result.length() - 1);
+    }
+    return result;
   }
 
   private static boolean isRegistrationRequest(String method, String url) {

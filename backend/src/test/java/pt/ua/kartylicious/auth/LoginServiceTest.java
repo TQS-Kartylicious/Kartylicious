@@ -33,6 +33,7 @@ class LoginServiceTest {
 
   @BeforeEach
   void setUp() {
+    when(passwordHasher.hash(anyString())).thenReturn("dummy-hash");
     service = new LoginService(repository, passwordHasher, tokenIssuer);
     account =
         new UserAccount(

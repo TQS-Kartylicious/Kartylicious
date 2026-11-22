@@ -123,6 +123,14 @@ public class LoginSteps {
   private static String baseUrl() {
     var configured = System.getProperty("e2e.baseUrl", System.getenv("E2E_BASE_URL"));
     var value = configured == null || configured.isBlank() ? "http://localhost:3000" : configured;
-    return value.replaceAll("/+$", "");
+    return removeTrailingSlashes(value);
+  }
+
+  private static String removeTrailingSlashes(String value) {
+    var result = value;
+    while (result.endsWith("/")) {
+      result = result.substring(0, result.length() - 1);
+    }
+    return result;
   }
 }
