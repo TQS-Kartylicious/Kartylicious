@@ -12,5 +12,7 @@ import org.junit.platform.suite.api.Suite;
 @IncludeEngines("cucumber")
 @SelectClasspathResource("features/registration/registration.feature")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "pt.ua.kartylicious.registration.e2e")
-@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty")
+@ConfigurationParameter(
+    key = PLUGIN_PROPERTY_NAME,
+    value = "pretty, junit:target/xray-reports/TEST-cucumber.xml, json:target/cucumber-reports/cucumber.json")
 public class RegistrationCucumberSuite {}
