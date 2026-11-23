@@ -7,7 +7,7 @@ Short guide for contributors. Rationale and evidence are in the QA Manual (secti
 2. Create a branch with the story key: `KARTY-<n>-<short-description>`.
 3. Commit often, prefixing each message with the key: `KARTY-<n>: short description`.
 4. Open a pull request with the key in the title and fill in the PR template (what changed, how it was tested, AI used and for what).
-5. CI runs: build, unit and integration tests, Sonar quality gate, dependency scan.
+5. CI runs: build, unit and integration tests, and the Sonar quality gate.
 6. An AI-assisted review comments; a teammate (never the author) reads the diff and the AI comments, then approves or requests changes.
 7. Squash merge once approved and CI is green. The branch is deleted.
 8. `main` is deployed automatically. Move the story to **Done** after acceptance.
