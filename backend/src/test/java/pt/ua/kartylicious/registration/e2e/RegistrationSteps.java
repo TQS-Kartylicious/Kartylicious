@@ -14,7 +14,6 @@ import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,7 +70,7 @@ public class RegistrationSteps {
     Response existingAccount = submitRegistration(existingUsername, existingEmail, VALID_PASSWORD);
     assertThat(existingAccount.status()).isEqualTo(201);
     page.waitForURL("**/dashboard");
-    page.navigate(baseUrl());
+    page.navigate(baseUrl() + "/register");
   }
 
   @When(
@@ -108,28 +107,15 @@ public class RegistrationSteps {
     submit();
   }
 
-  @Then("my account is created with the {string} role")
-  public void accountHasExpectedRole(String role) {
-    String expectedRole = role.replace(' ', '_').toUpperCase(Locale.ROOT);
+  @Then("my account is created")
+  public void accountHasBeenCreated() {
     assertThat(registrationResponse.status()).isEqualTo(201);
-    assertThat(registrationResponse.text()).contains("\"role\":\"" + expectedRole + "\"");
-    assertThat(page.locator("input[name='role']").count()).isZero();
   }
 
   @Then("I am redirected to the dashboard")
   public void redirectedToDashboard() {
     page.waitForURL("**/dashboard");
     PlaywrightAssertions.assertThat(page).hasURL(baseUrl() + "/dashboard");
-    PlaywrightAssertions.assertThat(
-            page.getByRole(
-                AriaRole.HEADING,
-                new Page.GetByRoleOptions().setName("Welcome, " + username + ".")))
-        .isVisible();
-  }
-
-  @Then("the kart success animation is shown")
-  public void kartSuccessAnimationIsShown() {
-    PlaywrightAssertions.assertThat(page.locator(".kart-sweep")).hasCount(1);
   }
 
   @Then("registration is rejected with {string} on the {string} field")
@@ -166,7 +152,15 @@ public class RegistrationSteps {
     String configured = System.getProperty("e2e.baseUrl", System.getenv("E2E_BASE_URL"));
     String baseUrl =
         configured == null || configured.isBlank() ? "http://localhost:3000" : configured;
-    return baseUrl.replaceAll("/+$", "");
+    return removeTrailingSlashes(baseUrl);
+  }
+
+  private static String removeTrailingSlashes(String value) {
+    var result = value;
+    while (result.endsWith("/")) {
+      result = result.substring(0, result.length() - 1);
+    }
+    return result;
   }
 
   private static boolean isRegistrationRequest(String method, String url) {

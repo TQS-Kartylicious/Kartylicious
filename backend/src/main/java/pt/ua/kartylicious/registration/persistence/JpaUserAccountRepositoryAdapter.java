@@ -1,6 +1,8 @@
 package pt.ua.kartylicious.registration.persistence;
 
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
+import java.util.UUID;
 import pt.ua.kartylicious.registration.UserAccount;
 import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
@@ -24,6 +26,16 @@ public class JpaUserAccountRepositoryAdapter implements UserAccountRepository {
   }
 
   @Override
+  public Optional<UserAccount> findByEmail(String email) {
+    return repository.findByEmail(email).map(this::toAccount);
+  }
+
+  @Override
+  public Optional<UserAccount> findById(UUID id) {
+    return repository.findById(id).map(this::toAccount);
+  }
+
+  @Override
   public UserAccount save(UserAccount account) {
     var entity =
         new JpaUserAccountEntity(
@@ -40,5 +52,14 @@ public class JpaUserAccountRepositoryAdapter implements UserAccountRepository {
         saved.getEmail(),
         saved.getPasswordHash(),
         saved.getRole());
+  }
+
+  private UserAccount toAccount(JpaUserAccountEntity entity) {
+    return new UserAccount(
+        entity.getId(),
+        entity.getUsername(),
+        entity.getEmail(),
+        entity.getPasswordHash(),
+        entity.getRole());
   }
 }
