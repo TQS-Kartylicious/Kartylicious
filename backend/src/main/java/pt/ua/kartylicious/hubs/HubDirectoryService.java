@@ -37,7 +37,7 @@ public class HubDirectoryService {
                         kart.id(),
                         kart.name(),
                         kart.batteryLevel(),
-                        kart.status().displayName(),
+                        displayStatus(kart).displayName(),
                         isSelectable(kart)))
             .toList();
     return new HubDetails(hub.id(), hub.name(), hub.address(), karts);
@@ -48,6 +48,20 @@ public class HubDirectoryService {
         && kart.active()
         && kart.batteryLevel() >= MINIMUM_BATTERY_LEVEL
         && !kart.criticalFault();
+  }
+
+  private KartStatus displayStatus(Kart kart) {
+    if (kart.criticalFault()
+        && (kart.status() == KartStatus.AVAILABLE
+            || kart.status() == KartStatus.INACTIVE
+            || kart.status() == KartStatus.LOW_BATTERY
+            || kart.status() == KartStatus.RESERVED)) {
+      return KartStatus.IN_MAINTENANCE;
+    }
+    if (!kart.active() && kart.status() == KartStatus.AVAILABLE) {
+      return KartStatus.INACTIVE;
+    }
+    return kart.status();
   }
 
   public record HubSummary(String id, String name, String address, int availableKartCount) {}

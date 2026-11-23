@@ -2,6 +2,8 @@ package pt.ua.kartylicious.hubs;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.when;
@@ -23,6 +25,9 @@ import pt.ua.kartylicious.auth.SecurityConfiguration;
 import pt.ua.kartylicious.hubs.HubDirectoryService.HubDetails;
 import pt.ua.kartylicious.hubs.HubDirectoryService.HubSummary;
 import pt.ua.kartylicious.hubs.HubDirectoryService.KartDetails;
+import pt.ua.kartylicious.registration.UserAccount;
+import pt.ua.kartylicious.registration.UserRole;
+import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
 @WebMvcTest(HubController.class)
 @Import({SecurityConfiguration.class, JwtConfiguration.class})
@@ -32,6 +37,8 @@ class HubControllerTest {
   @Autowired private JwtEncoder jwtEncoder;
 
   @MockitoBean private HubDirectoryService hubDirectoryService;
+
+  @MockitoBean private UserAccountRepository userAccountRepository;
 
   @Requirement("KARTY-35")
   @Test
@@ -124,10 +131,20 @@ class HubControllerTest {
 
   private String tokenForRole(String role) {
     var now = Instant.now();
+    var userId = UUID.fromString("00000000-0000-0000-0000-000000000035");
+    when(userAccountRepository.findById(userId))
+        .thenReturn(
+            Optional.of(
+                new UserAccount(
+                    userId,
+                    "karty-35-test-user",
+                    "karty-35-test-user@example.com",
+                    "not-used",
+                    UserRole.valueOf(role))));
     var claims =
         JwtClaimsSet.builder()
             .issuer("kartylicious-test")
-            .subject("karty-35-test-user")
+            .subject(userId.toString())
             .issuedAt(now)
             .expiresAt(now.plusSeconds(300))
             .claim("role", role)

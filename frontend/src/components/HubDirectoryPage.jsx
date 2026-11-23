@@ -48,7 +48,10 @@ function HubDirectoryPage() {
         if (!isCancelled) setHub(result)
       })
       .catch((loadError) => {
-        if (!isCancelled) setError(loadError.message)
+        if (!isCancelled) {
+          setHub(null)
+          setError(loadError.message)
+        }
       })
       .finally(() => {
         if (!isCancelled) setIsLoadingHub(false)

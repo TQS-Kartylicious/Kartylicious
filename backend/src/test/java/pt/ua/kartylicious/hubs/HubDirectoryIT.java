@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import java.time.Instant;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +16,9 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.kartylicious.registration.UserAccount;
+import pt.ua.kartylicious.registration.UserRole;
+import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -22,6 +27,22 @@ class HubDirectoryIT {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private JwtEncoder jwtEncoder;
+
+  @Autowired private UserAccountRepository userAccountRepository;
+
+  private UUID endUserId;
+
+  @BeforeEach
+  void createEndUserAccount() {
+    endUserId = UUID.randomUUID();
+    userAccountRepository.save(
+        new UserAccount(
+            endUserId,
+            "karty-35-end-user-" + endUserId,
+            "karty-35-end-user-" + endUserId + "@example.com",
+            "not-used",
+            UserRole.END_USER));
+  }
 
   @Requirement("KARTY-35")
   @Test
@@ -72,7 +93,7 @@ class HubDirectoryIT {
     var claims =
         JwtClaimsSet.builder()
             .issuer("kartylicious-test")
-            .subject("karty-35-end-user")
+            .subject(endUserId.toString())
             .issuedAt(now)
             .expiresAt(now.plusSeconds(300))
             .claim("role", "END_USER")
