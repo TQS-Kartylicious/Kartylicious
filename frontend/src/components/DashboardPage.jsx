@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthContext.jsx'
 import HubDirectoryPage from './HubDirectoryPage.jsx'
 
 function DashboardPage({ username }) {
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
 
   function handleLogout() {
     logout()
@@ -42,7 +42,17 @@ function DashboardPage({ username }) {
           <h1>{username ? `Welcome, ${username}.` : 'Welcome to Kartylicious.'}</h1>
           <p className="dashboard-copy">Your next ride is waiting at a municipal hub.</p>
         </div>
+
         <HubDirectoryPage />
+
+        <a className="dashboard-link" href="/">
+          Back to Kartylicious <span aria-hidden="true">↗</span>
+        </a>
+        {user?.role === 'ADMIN' && (
+          <a className="dashboard-link" href="/admin/users">
+            User management
+          </a>
+        )}
         <button className="dashboard-link" type="button" onClick={handleLogout}>
           Logout
         </button>

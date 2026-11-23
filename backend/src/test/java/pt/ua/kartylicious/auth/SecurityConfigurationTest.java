@@ -136,10 +136,14 @@ class SecurityConfigurationTest {
   }
 
   private String validToken(UUID id) {
+    return tokenForSubject(id.toString());
+  }
+
+  private String tokenForSubject(String subject) {
     var claims =
         JwtClaimsSet.builder()
             .issuer("kartylicious")
-            .subject(id.toString())
+            .subject(subject)
             .issuedAt(Instant.now())
             .expiresAt(Instant.now().plusSeconds(3600))
             .claim("username", "kartfan")

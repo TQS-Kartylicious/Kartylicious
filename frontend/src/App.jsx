@@ -4,6 +4,7 @@ import DashboardPage from './components/DashboardPage.jsx'
 import LoginPage from './components/LoginPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import RegistrationPage from './components/RegistrationPage.jsx'
+import AdminUsersPage from './components/AdminUsersPage.jsx'
 import './App.css'
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
 function AppRoutes() {
   const [pathname, setPathname] = useState(window.location.pathname)
   const [registeredUsername, setRegisteredUsername] = useState('')
-  const { token } = useAuth()
+  const { token, user, isSessionLoading } = useAuth()
 
   useEffect(() => {
     const handlePopState = () => setPathname(window.location.pathname)
@@ -42,6 +43,26 @@ function AppRoutes() {
 
   if (pathname === '/login') {
     return <LoginPage />
+  }
+
+  if (pathname === '/admin/users') {
+    if (!token) {
+      window.history.replaceState({}, '', '/login')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+      return null
+    }
+    if (isSessionLoading) return null
+    if (!user) {
+      window.history.replaceState({}, '', '/login')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+      return null
+    }
+    if (user.role !== 'ADMIN') {
+      window.history.replaceState({}, '', '/dashboard')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+      return null
+    }
+    return <AdminUsersPage />
   }
 
   if (pathname === '/register') {
