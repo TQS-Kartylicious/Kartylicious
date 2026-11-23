@@ -3,6 +3,8 @@ package pt.ua.kartylicious.admin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
@@ -52,6 +54,7 @@ class AdminServiceTest {
     assertThat(result.email()).isEqualTo("staff@example.com");
     assertThat(result.role()).isEqualTo(UserRole.OPERATOR);
     assertThat(result.active()).isTrue();
+    verify(passwordHasher).hash("strong-pass-123");
   }
 
   @Requirement("KARTY-76")
@@ -88,6 +91,20 @@ class AdminServiceTest {
 
   @Requirement("KARTY-76")
   @Test
+  void rejectsUnknownStaffRole() {
+    assertThatThrownBy(
+            () ->
+                service.createStaff(
+                    new AdminRequest(
+                        "staff", "staff@example.com", "strong-pass-123", "UNKNOWN")))
+        .isInstanceOf(AdminExceptions.InvalidRoleException.class);
+
+    verify(repository, never()).save(any());
+  }
+
+
+  @Requirement("KARTY-76")
+  @Test
   void changesRole() {
     var id = UUID.randomUUID();
     var account =
@@ -100,6 +117,25 @@ class AdminServiceTest {
     var result = service.changeRole(id, "MUNICIPAL_WORKER");
 
     assertThat(result.role()).isEqualTo(UserRole.MUNICIPAL_WORKER);
+  }
+
+
+  @Requirement("KARTY-76")
+  @Test
+  void allowsDemotionWhenAnotherAdminRemains() {
+    var id = UUID.randomUUID();
+    var admin =
+        new UserAccount(id, "admin", "admin@example.com", "hash", UserRole.ADMIN, true);
+    when(repository.lockActiveAdmins()).thenReturn(List.of(admin));
+    when(repository.findById(id)).thenReturn(Optional.of(admin));
+    when(repository.countActiveAdmins()).thenReturn(2L);
+    when(repository.save(any(UserAccount.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    var result = service.changeRole(id, "operator");
+
+    assertThat(result.role()).isEqualTo(UserRole.OPERATOR);
+    assertThat(result.active()).isTrue();
   }
 
   @Requirement("KARTY-76")
@@ -128,6 +164,8 @@ class AdminServiceTest {
     when(repository.findById(id)).thenReturn(Optional.of(inactive));
 
     assertThat(service.deactivate(id).active()).isFalse();
+    verify(userActivityPort, never()).hasActiveRideOrReservation(id);
+    verify(repository, never()).save(any());
 
     var active =
         new UserAccount(id, "staff", "staff@example.com", "hash", UserRole.OPERATOR, true);
@@ -135,5 +173,25 @@ class AdminServiceTest {
     when(userActivityPort.hasActiveRideOrReservation(id)).thenReturn(true);
     assertThatThrownBy(() -> service.deactivate(id))
         .isInstanceOf(AdminExceptions.ActiveRideOrReservationException.class);
+  }
+
+
+  @Requirement("KARTY-76")
+  @Test
+  void allowsAdminDeactivationWhenAnotherActiveAdminRemains() {
+    var id = UUID.randomUUID();
+    var admin =
+        new UserAccount(id, "admin", "admin@example.com", "hash", UserRole.ADMIN, true);
+    when(repository.lockActiveAdmins()).thenReturn(List.of(admin));
+    when(repository.findById(id)).thenReturn(Optional.of(admin));
+    when(userActivityPort.hasActiveRideOrReservation(id)).thenReturn(false);
+    when(repository.countActiveAdmins()).thenReturn(2L);
+    when(repository.save(any(UserAccount.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    var result = service.deactivate(id);
+
+    assertThat(result.active()).isFalse();
+    assertThat(result.role()).isEqualTo(UserRole.ADMIN);
   }
 }
