@@ -2,7 +2,7 @@ import Brand from './Brand.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
 
 function DashboardPage({ username }) {
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
 
   function handleLogout() {
     logout()
@@ -47,6 +47,11 @@ function DashboardPage({ username }) {
         <a className="dashboard-link" href="/">
           Back to Kartylicious <span aria-hidden="true">↗</span>
         </a>
+        {user?.role === 'ADMIN' && (
+          <a className="dashboard-link" href="/admin/users">
+            User management
+          </a>
+        )}
         <button className="dashboard-link" type="button" onClick={handleLogout}>
           Logout
         </button>

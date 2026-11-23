@@ -6,26 +6,48 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import java.util.UUID;
+import pt.ua.kartylicious.registration.port.UserAccountRepository;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration {
 
+  private final UserAccountRepository userAccountRepository;
+
+  public SecurityConfiguration(UserAccountRepository userAccountRepository) {
+    this.userAccountRepository = userAccountRepository;
+  }
+
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    var jwtAuthenticationConverter = new JwtAuthenticationConverter();
-    jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
+    Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter =
         jwt -> {
-          var role = jwt.getClaimAsString("role");
-          if (role == null || role.isBlank()) {
-            return java.util.List.of();
+          try {
+            var account =
+                userAccountRepository
+                    .findById(UUID.fromString(jwt.getSubject()))
+                    .orElseThrow(
+                        () -> new InvalidBearerTokenException("Authentication required"));
+            if (!account.active()) {
+              throw new InvalidBearerTokenException("Authentication required");
+            }
+            return new JwtAuthenticationToken(
+                jwt,
+                java.util.List.of(
+                    new SimpleGrantedAuthority("ROLE_" + account.role().name())),
+                account.username());
+          } catch (IllegalArgumentException exception) {
+            throw new InvalidBearerTokenException("Authentication required", exception);
           }
-          return java.util.List.of(
-              new org.springframework.security.core.authority.SimpleGrantedAuthority(
-                  "ROLE_" + role));
-        });
+        };
 
     http.csrf(csrf -> csrf.disable()) // NOSONAR - Stateless bearer auth is not cookie/session based.
         .sessionManagement(
@@ -40,6 +62,8 @@ public class SecurityConfiguration {
                         "/api/auth/login",
                         "/actuator/health")
                     .permitAll()
+                    .requestMatchers("/api/admin/**")
+                    .hasRole("ADMIN")
                     .anyRequest()
                     .authenticated())
         .oauth2ResourceServer(

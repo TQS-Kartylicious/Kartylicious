@@ -19,7 +19,11 @@ import pt.ua.kartylicious.registration.UserRole;
 import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfiguration.class, JwtConfiguration.class})
+@Import({
+  SecurityConfiguration.class,
+  JwtConfiguration.class,
+  AuthExceptionHandler.class
+})
 class AuthControllerTest {
 
   @Autowired private MockMvc mockMvc;
@@ -66,7 +70,7 @@ class AuthControllerTest {
                     {"user":"","password":""}
                     """))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.email").value("The email is required"))
+        .andExpect(jsonPath("$.user").value("The email is required"))
         .andExpect(jsonPath("$.password").value("The password is required"));
   }
 

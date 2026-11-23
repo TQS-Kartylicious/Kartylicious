@@ -3,6 +3,7 @@ package pt.ua.kartylicious.registration.persistence;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 import pt.ua.kartylicious.registration.UserAccount;
 import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
@@ -36,6 +37,27 @@ public class JpaUserAccountRepositoryAdapter implements UserAccountRepository {
   }
 
   @Override
+  public List<UserAccount> findAllOrderedByUsername() {
+    return repository.findAllByOrderByUsernameAsc().stream().map(this::toAccount).toList();
+  }
+
+  @Override
+  public long countActiveAdmins() {
+    return repository.countByRoleAndActive(
+        pt.ua.kartylicious.registration.UserRole.ADMIN, true);
+  }
+
+  @Override
+  public long countAdmins() {
+    return repository.countByRole(pt.ua.kartylicious.registration.UserRole.ADMIN);
+  }
+
+  @Override
+  public List<UserAccount> lockActiveAdmins() {
+    return repository.lockActiveAdmins().stream().map(this::toAccount).toList();
+  }
+
+  @Override
   public UserAccount save(UserAccount account) {
     var entity =
         new JpaUserAccountEntity(
@@ -43,7 +65,8 @@ public class JpaUserAccountRepositoryAdapter implements UserAccountRepository {
             account.username(),
             account.email(),
             account.passwordHash(),
-            account.role());
+            account.role(),
+            account.active());
     var saved = repository.save(entity);
 
     return new UserAccount(
@@ -51,7 +74,8 @@ public class JpaUserAccountRepositoryAdapter implements UserAccountRepository {
         saved.getUsername(),
         saved.getEmail(),
         saved.getPasswordHash(),
-        saved.getRole());
+        saved.getRole(),
+        saved.isActive());
   }
 
   private UserAccount toAccount(JpaUserAccountEntity entity) {
@@ -60,6 +84,7 @@ public class JpaUserAccountRepositoryAdapter implements UserAccountRepository {
         entity.getUsername(),
         entity.getEmail(),
         entity.getPasswordHash(),
-        entity.getRole());
+        entity.getRole(),
+        entity.isActive());
   }
 }

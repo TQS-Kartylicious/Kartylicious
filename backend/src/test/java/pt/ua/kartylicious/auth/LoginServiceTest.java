@@ -85,4 +85,25 @@ class LoginServiceTest {
 
     verify(tokenIssuer, never()).issue(account);
   }
+
+  @Requirement("KARTY-76")
+  @Test
+  void deactivatedAccountWithCorrectPasswordIsForbidden() {
+    var inactive =
+        new UserAccount(
+            account.id(),
+            account.username(),
+            account.email(),
+            "hashed-password",
+            UserRole.END_USER,
+            false);
+    when(repository.findByEmail("kart@example.com")).thenReturn(Optional.of(inactive));
+    when(passwordHasher.matches("strong-pass-123", "hashed-password")).thenReturn(true);
+
+    assertThatThrownBy(() -> service.login("kart@example.com", "strong-pass-123"))
+        .isInstanceOf(DeactivatedAccountException.class)
+        .hasMessage("This account is deactivated.");
+
+    org.mockito.Mockito.verify(tokenIssuer, never()).issue(inactive);
+  }
 }
