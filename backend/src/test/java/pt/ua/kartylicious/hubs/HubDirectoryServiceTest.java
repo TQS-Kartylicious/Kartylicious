@@ -52,6 +52,37 @@ class HubDirectoryServiceTest {
 
   @Requirement("KARTY-35")
   @Test
+  void criticalFaultAndInactiveKartsShowTheirEffectiveStatus() {
+    var hub =
+        new Hub(
+            "hub-1",
+            "Riverside Hub",
+            "1 River Road",
+            List.of(
+                new Kart("kart-1", "Blue kart", 80, KartStatus.AVAILABLE, true, true),
+                new Kart("kart-2", "Green kart", 80, KartStatus.INACTIVE, false, true),
+                new Kart("kart-3", "Yellow kart", 80, KartStatus.LOW_BATTERY, true, true),
+                new Kart("kart-4", "Red kart", 80, KartStatus.RESERVED, true, true),
+                new Kart("kart-5", "White kart", 80, KartStatus.IN_USE, true, true),
+                new Kart("kart-6", "Orange kart", 80, KartStatus.AVAILABLE, false, false),
+                new Kart("kart-7", "Purple kart", 80, KartStatus.INACTIVE, false, false)));
+    when(hubRepository.findById("hub-1")).thenReturn(Optional.of(hub));
+
+    var result = service.getHub("hub-1");
+
+    assertThat(result.karts()).extracting(HubDirectoryService.KartDetails::status)
+        .containsExactly(
+            "In Maintenance",
+            "In Maintenance",
+            "In Maintenance",
+            "In Maintenance",
+            "In Use",
+            "Inactive",
+            "Inactive");
+  }
+
+  @Requirement("KARTY-35")
+  @Test
   void kartAtMinimumBatteryLevelCanBeSelectedForBooking() {
     var hub = hubWithKart(new Kart("kart-1", "Blue kart", 20, KartStatus.AVAILABLE, true, false));
     when(hubRepository.findById("hub-1")).thenReturn(Optional.of(hub));
