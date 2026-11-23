@@ -14,5 +14,5 @@ import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "pt.ua.kartylicious.auth.e2e")
 @ConfigurationParameter(
     key = PLUGIN_PROPERTY_NAME,
-    value = "pretty, junit:target/xray-reports/TEST-cucumber.xml, json:target/cucumber-reports/cucumber.json")
+    value = "pretty, junit:target/xray-reports/login-TEST-cucumber.xml, json:target/cucumber-reports/login-cucumber.json")
 public class LoginCucumberSuite {}
