@@ -72,6 +72,7 @@ class HubDirectoryIT {
         .andExpect(jsonPath("$.karts[1].status").value("Available"))
         .andExpect(jsonPath("$.karts[1].selectable").value(true))
         .andExpect(jsonPath("$.karts[2].batteryLevel").value(19))
+        .andExpect(jsonPath("$.karts[2].status").value("Low Battery"))
         .andExpect(jsonPath("$.karts[2].selectable").value(false))
         .andExpect(jsonPath("$.karts[3].status").value("In Use"))
         .andExpect(jsonPath("$.karts[3].selectable").value(false))

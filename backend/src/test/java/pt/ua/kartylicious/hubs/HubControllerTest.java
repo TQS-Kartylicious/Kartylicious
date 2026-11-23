@@ -53,7 +53,7 @@ class HubControllerTest {
                 "1 River Road",
                 List.of(
                     new KartDetails("kart-1", "Blue kart", 20, "Available", true),
-                    new KartDetails("kart-2", "Yellow kart", 19, "Available", false),
+                    new KartDetails("kart-2", "Yellow kart", 19, "Low Battery", false),
                     new KartDetails("kart-3", "Green kart", 80, "In Use", false),
                     new KartDetails("kart-4", "Red kart", 80, "Reserved", false),
                     new KartDetails("kart-5", "White kart", 80, "In Maintenance", false),
@@ -77,6 +77,7 @@ class HubControllerTest {
         .andExpect(jsonPath("$.karts[0].status").value("Available"))
         .andExpect(jsonPath("$.karts[0].selectable").value(true))
         .andExpect(jsonPath("$.karts[1].batteryLevel").value(19))
+        .andExpect(jsonPath("$.karts[1].status").value("Low Battery"))
         .andExpect(jsonPath("$.karts[1].selectable").value(false))
         .andExpect(jsonPath("$.karts[2].status").value("In Use"))
         .andExpect(jsonPath("$.karts[2].selectable").value(false))
@@ -99,7 +100,7 @@ class HubControllerTest {
                 "Quiet Hub",
                 "2 Park Road",
                 List.of(
-                    new KartDetails("kart-7", "Gray kart", 19, "Available", false),
+                    new KartDetails("kart-7", "Gray kart", 19, "Low Battery", false),
                     new KartDetails("kart-8", "Black kart", 80, "In Use", false))));
 
     var authorization = "Bearer " + tokenForRole("END_USER");

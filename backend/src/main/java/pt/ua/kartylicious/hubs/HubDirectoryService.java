@@ -44,10 +44,7 @@ public class HubDirectoryService {
   }
 
   private boolean isSelectable(Kart kart) {
-    return kart.status() == KartStatus.AVAILABLE
-        && kart.active()
-        && kart.batteryLevel() >= MINIMUM_BATTERY_LEVEL
-        && !kart.criticalFault();
+    return displayStatus(kart) == KartStatus.AVAILABLE;
   }
 
   private KartStatus displayStatus(Kart kart) {
@@ -60,6 +57,14 @@ public class HubDirectoryService {
     }
     if (!kart.active() && kart.status() == KartStatus.AVAILABLE) {
       return KartStatus.INACTIVE;
+    }
+    if (kart.status() == KartStatus.AVAILABLE
+        && kart.batteryLevel() < MINIMUM_BATTERY_LEVEL) {
+      return KartStatus.LOW_BATTERY;
+    }
+    if (kart.status() == KartStatus.LOW_BATTERY
+        && kart.batteryLevel() >= MINIMUM_BATTERY_LEVEL) {
+      return KartStatus.AVAILABLE;
     }
     return kart.status();
   }

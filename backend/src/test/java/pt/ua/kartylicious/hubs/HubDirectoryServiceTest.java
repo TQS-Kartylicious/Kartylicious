@@ -35,7 +35,7 @@ class HubDirectoryServiceTest {
             "Riverside Hub",
             "1 River Road",
             List.of(
-                new Kart("kart-0", "Yellow kart", 80, KartStatus.LOW_BATTERY, true, false),
+                new Kart("kart-0", "Yellow kart", 19, KartStatus.LOW_BATTERY, true, false),
                 new Kart("kart-4", "White kart", 80, KartStatus.INACTIVE, true, false),
                 new Kart("kart-1", "Blue kart", 80, KartStatus.IN_USE, true, false),
                 new Kart("kart-2", "Green kart", 80, KartStatus.RESERVED, true, false),
@@ -61,7 +61,7 @@ class HubDirectoryServiceTest {
             List.of(
                 new Kart("kart-1", "Blue kart", 80, KartStatus.AVAILABLE, true, true),
                 new Kart("kart-2", "Green kart", 80, KartStatus.INACTIVE, false, true),
-                new Kart("kart-3", "Yellow kart", 80, KartStatus.LOW_BATTERY, true, true),
+                new Kart("kart-3", "Yellow kart", 19, KartStatus.LOW_BATTERY, true, true),
                 new Kart("kart-4", "Red kart", 80, KartStatus.RESERVED, true, true),
                 new Kart("kart-5", "White kart", 80, KartStatus.IN_USE, true, true),
                 new Kart("kart-6", "Orange kart", 80, KartStatus.AVAILABLE, false, false),
@@ -126,6 +126,23 @@ class HubDirectoryServiceTest {
             kart -> {
               assertThat(kart.batteryLevel()).isEqualTo(19);
               assertThat(kart.selectable()).isFalse();
+              assertThat(kart.status()).isEqualTo("Low Battery");
+            });
+  }
+
+  @Requirement("KARTY-35")
+  @Test
+  void kartWithLowBatteryStatusReturnsToAvailableAfterCharging() {
+    var hub = hubWithKart(new Kart("kart-1", "Blue kart", 20, KartStatus.LOW_BATTERY, true, false));
+    when(hubRepository.findById("hub-1")).thenReturn(Optional.of(hub));
+
+    var result = service.getHub("hub-1");
+
+    assertThat(result.karts()).singleElement()
+        .satisfies(
+            kart -> {
+              assertThat(kart.status()).isEqualTo("Available");
+              assertThat(kart.selectable()).isTrue();
             });
   }
 
