@@ -39,7 +39,7 @@ Run from `backend/` unless stated otherwise.
 - Integration tests if API, persistence or adapters changed
 - Gherkin scenarios for core user stories
 - E2E test (Playwright) if the story is a core user flow
-- CI green: build, tests, dependency scan, Sonar quality gate on new code
+- CI green: build, tests, Sonar quality gate on new code
 - Documentation updated when affected (API docs, reports)
 
 ## Rules
