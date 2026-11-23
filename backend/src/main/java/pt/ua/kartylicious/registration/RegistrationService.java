@@ -37,7 +37,8 @@ public class RegistrationService {
             normalizedUsername,
             normalizedEmail,
             passwordHasher.hash(password),
-            UserRole.END_USER);
+            UserRole.END_USER,
+            true);
     return userAccountRepository.save(account);
   }
 }

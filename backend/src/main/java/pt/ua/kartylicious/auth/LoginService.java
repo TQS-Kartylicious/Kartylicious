@@ -37,8 +37,12 @@ public class LoginService {
       throw new InvalidCredentialsException();
     }
 
-    var issued = jwtTokenIssuer.issue(account.orElseThrow());
     var user = account.orElseThrow();
+    if (!user.active()) {
+      throw new DeactivatedAccountException();
+    }
+
+    var issued = jwtTokenIssuer.issue(user);
     return new LoginResponse(
         issued.token(),
         "Bearer",

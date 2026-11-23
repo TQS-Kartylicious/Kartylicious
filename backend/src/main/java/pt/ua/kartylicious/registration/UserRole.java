@@ -1,5 +1,8 @@
 package pt.ua.kartylicious.registration;
 
 public enum UserRole {
-  END_USER
+  END_USER,
+  OPERATOR,
+  MUNICIPAL_WORKER,
+  ADMIN
 }

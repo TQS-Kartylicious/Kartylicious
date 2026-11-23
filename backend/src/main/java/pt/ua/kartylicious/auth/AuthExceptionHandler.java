@@ -30,4 +30,11 @@ public class AuthExceptionHandler {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
         .body(Map.of("message", exception.getMessage()));
   }
+
+  @ExceptionHandler(DeactivatedAccountException.class)
+  public ResponseEntity<Map<String, String>> handleDeactivatedAccount(
+      DeactivatedAccountException exception) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(Map.of("message", exception.getMessage()));
+  }
 }

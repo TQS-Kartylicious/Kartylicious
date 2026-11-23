@@ -28,15 +28,33 @@ public class JpaUserAccountEntity {
   @Column(nullable = false, length = 32)
   private UserRole role;
 
+  @Column(nullable = false, columnDefinition = "boolean default true")
+  private boolean active = true;
+
   protected JpaUserAccountEntity() {}
 
   JpaUserAccountEntity(
-      UUID id, String username, String email, String passwordHash, UserRole role) {
+      UUID id,
+      String username,
+      String email,
+      String passwordHash,
+      UserRole role) {
+    this(id, username, email, passwordHash, role, true);
+  }
+
+  JpaUserAccountEntity(
+      UUID id,
+      String username,
+      String email,
+      String passwordHash,
+      UserRole role,
+      boolean active) {
     this.id = id;
     this.username = username;
     this.email = email;
     this.passwordHash = passwordHash;
     this.role = role;
+    this.active = active;
   }
 
   UUID getId() {
@@ -57,5 +75,17 @@ public class JpaUserAccountEntity {
 
   UserRole getRole() {
     return role;
+  }
+
+  boolean isActive() {
+    return active;
+  }
+
+  void setRole(UserRole role) {
+    this.role = role;
+  }
+
+  void setActive(boolean active) {
+    this.active = active;
   }
 }
