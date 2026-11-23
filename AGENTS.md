@@ -11,7 +11,7 @@ Kartylicious is a managed fleet-as-a-service of light electric mini-karts (munic
 
 ## Build and test commands
 Run from `backend/` unless stated otherwise.
-- Build and all checks: `./mvnw clean verify` (this is what CI runs)
+- Build and all checks: `./mvnw -B verify` (this is what CI runs)
 - Unit tests only (Surefire): `./mvnw test`
 - Integration tests (Failsafe, Testcontainers): `./mvnw verify`
 - Run locally (repo root): `docker compose up`
