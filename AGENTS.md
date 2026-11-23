@@ -13,7 +13,7 @@ Kartylicious is a managed fleet-as-a-service of light electric mini-karts (munic
 Run from `backend/` unless stated otherwise.
 - Build and all checks: `./mvnw clean verify` (this is what CI runs)
 - Unit tests only (Surefire): `./mvnw test`
-- Integration tests (Failsafe, Testcontainers): `./mvnw verify -Pintegration`
+- Integration tests (Failsafe, Testcontainers): `./mvnw verify`
 - Run locally (repo root): `docker compose up`
 - E2E (Playwright) and k6 load tests are **not** part of the regular build; run them only when asked.
 
