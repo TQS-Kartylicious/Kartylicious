@@ -5,7 +5,7 @@ Instructions for AI assistants and agents working on Kartylicious. They must sta
 ## Project
 Kartylicious is a managed fleet-as-a-service of light electric mini-karts (municipal concession model, fictional city).
 - **Backend:** Spring Boot (stable), Java 21, Maven wrapper (`./mvnw`), in `backend/`.
-- **Frontend:** <TODO: team's stack>. End-to-end tests use Playwright.
+- **Frontend:** React + Vite. End-to-end tests use Playwright.
 - **Integrations (behind ports):** `TelemetryPort` (MQTT simulator), `PaymentPort` (Stripe test mode or simulated gateway), `GbfsPublisher` (optional GBFS feed).
 - **Roles:** End User, Service Operator (includes technician), Municipal Worker, Admin. Authentication is JWT.
 
