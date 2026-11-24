@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getHub, getHubs } from '../api/hubsApi.js'
 import { createBooking, getActiveBookings } from '../api/bookingsApi.js'
+import { startRide } from '../api/ridesApi.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 
 function currentDateTimeLocal() {
@@ -24,6 +25,25 @@ function HubDirectoryPage() {
   const [duration, setDuration] = useState('60')
   const [isBooking, setIsBooking] = useState(false)
   const [activeBookings, setActiveBookings] = useState([])
+  const [ride, setRide] = useState(null)
+  const [rideError, setRideError] = useState('')
+  const [isStartingRide, setIsStartingRide] = useState(false)
+
+  async function startSelectedRide(hubId, kartId) {
+    setIsStartingRide(true)
+    setRideError('')
+    try {
+      const result = await startRide({ hubId, kartId }, token)
+      setRide(result)
+      const refreshedHub = await getHub(hubId, token)
+      if (hubId === selectedHubId) setHub(refreshedHub)
+      await refreshActiveBookings()
+    } catch (startError) {
+      setRideError(startError.message)
+    } finally {
+      setIsStartingRide(false)
+    }
+  }
 
   async function refreshActiveBookings() {
     const result = await getActiveBookings(token)
@@ -79,7 +99,7 @@ function HubDirectoryPage() {
   }, [token])
 
   useEffect(() => {
-refreshActiveBookings().catch((loadError) => setBookingError(loadError.message))
+    refreshActiveBookings().catch((loadError) => setBookingError(loadError.message))
   }, [token])
 
   useEffect(() => {
@@ -125,6 +145,17 @@ refreshActiveBookings().catch((loadError) => setBookingError(loadError.message))
       {error && <p className="hub-message hub-message--error" role="alert">{error}</p>}
       {bookingMessage && <p className="hub-message" role="status">{bookingMessage}</p>}
       {bookingError && <p className="hub-message hub-message--error" role="alert">{bookingError}</p>}
+      {rideError && <p className="hub-message hub-message--error" role="alert">{rideError}</p>}
+
+      {ride && (
+        <section aria-labelledby="active-ride-title" className="active-ride" role="status">
+          <div>
+            <p className="eyebrow">RIDE IN PROGRESS</p>
+            <h3 id="active-ride-title">{ride.kartId} is ready to go</h3>
+          </div>
+          <RideTimer startedAt={ride.startedAt} />
+        </section>
+      )}
 
       <section aria-labelledby="active-trips-title" className="active-trips">
         <h3 id="active-trips-title">Active trips</h3>
@@ -135,7 +166,19 @@ refreshActiveBookings().catch((loadError) => setBookingError(loadError.message))
             {activeBookings.map((booking) => (
               <li key={booking.id}>
                 <span>{booking.kartId}</span>
-                <span>{booking.status === 'ACTIVE' ? 'Reserved' : booking.status}</span>
+                <span className="active-trip__actions">
+                  <span>{booking.status === 'ACTIVE' ? 'Reserved' : booking.status}</span>
+                  {booking.status === 'ACTIVE' && !ride && (
+                    <button
+                      className="trip-start"
+                      disabled={isStartingRide}
+                      onClick={() => startSelectedRide(booking.hubId, booking.kartId)}
+                      type="button"
+                    >
+                      {isStartingRide ? 'Starting…' : 'Start Ride'}
+                    </button>
+                  )}
+                </span>
               </li>
             ))}
           </ul>
@@ -216,6 +259,16 @@ refreshActiveBookings().catch((loadError) => setBookingError(loadError.message))
                       >
                         {selectedKartId === kart.id ? 'Selected' : 'Select kart'}
                       </button>
+                      {kart.selectable && !ride && (
+                        <button
+                          className="kart-start"
+                          disabled={isStartingRide}
+                          onClick={() => startSelectedRide(selectedHubId, kart.id)}
+                          type="button"
+                        >
+                          {isStartingRide ? 'Starting…' : 'Start Ride'}
+                        </button>
+                      )}
                       {!kart.selectable && kart.status === 'Available' && (
                         <p className="kart-card__note">Not eligible for booking</p>
                       )}
@@ -249,6 +302,29 @@ refreshActiveBookings().catch((loadError) => setBookingError(loadError.message))
       )}
     </section>
   )
+}
+
+function RideTimer({ startedAt }) {
+  const [elapsedSeconds, setElapsedSeconds] = useState(() => elapsedTime(startedAt))
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setElapsedSeconds(elapsedTime(startedAt)), 1000)
+    return () => window.clearInterval(timer)
+  }, [startedAt])
+
+  const hours = Math.floor(elapsedSeconds / 3600)
+  const minutes = Math.floor((elapsedSeconds % 3600) / 60)
+  const seconds = elapsedSeconds % 60
+  return (
+    <time className="ride-timer" dateTime={startedAt}>
+      {hours > 0 ? `${String(hours).padStart(2, '0')}:` : ''}
+      {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+    </time>
+  )
+}
+
+function elapsedTime(startedAt) {
+  return Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000))
 }
 
 export default HubDirectoryPage

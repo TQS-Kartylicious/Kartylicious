@@ -12,4 +12,8 @@ public interface HubRepository {
   boolean reserveKart(String hubId, String kartId);
 
   boolean releaseKart(String hubId, String kartId);
+
+  boolean startKart(String hubId, String kartId);
+
+  boolean markKartLowBattery(String hubId, String kartId);
 }
