@@ -81,8 +81,8 @@ public class BookingService {
     if (!startsAt.isAfter(Instant.now())) {
       throw new BookingValidationException("Booking start time must be in the future.");
     }
-    var durationSeconds = Duration.between(startsAt, endsAt).toSeconds();
-    if (durationSeconds > DEFAULT_MAXIMUM_DURATION_MINUTES * 60) {
+var duration = Duration.between(startsAt, endsAt);
+    if (duration.compareTo(Duration.ofMinutes(DEFAULT_MAXIMUM_DURATION_MINUTES)) > 0) {
       throw new BookingValidationException(
           "Maximum permitted rental duration: " + DEFAULT_MAXIMUM_DURATION_MINUTES);
     }
