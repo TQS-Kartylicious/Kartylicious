@@ -79,7 +79,7 @@ function HubDirectoryPage() {
   }, [token])
 
   useEffect(() => {
-    refreshActiveBookings().catch(() => {})
+refreshActiveBookings().catch((loadError) => setBookingError(loadError.message))
   }, [token])
 
   useEffect(() => {
