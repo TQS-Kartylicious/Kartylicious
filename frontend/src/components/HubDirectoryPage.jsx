@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getHub, getHubs } from '../api/hubsApi.js'
-import { createBooking } from '../api/bookingsApi.js'
+import { createBooking, getActiveBookings } from '../api/bookingsApi.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 
 function currentDateTimeLocal() {
@@ -23,6 +23,12 @@ function HubDirectoryPage() {
   const [startsAt, setStartsAt] = useState('')
   const [duration, setDuration] = useState('60')
   const [isBooking, setIsBooking] = useState(false)
+  const [activeBookings, setActiveBookings] = useState([])
+
+  async function refreshActiveBookings() {
+    const result = await getActiveBookings(token)
+    setActiveBookings(result)
+  }
 
   async function bookSelectedKart() {
     const kart = hub?.karts.find((item) => item.id === selectedKartId)
@@ -43,6 +49,7 @@ function HubDirectoryPage() {
       setSelectedKartId('')
       const refreshedHub = await getHub(selectedHubId, token)
       setHub(refreshedHub)
+      await refreshActiveBookings()
     } catch (bookingLoadError) {
       setBookingError(bookingLoadError.message)
     } finally {
@@ -69,6 +76,10 @@ function HubDirectoryPage() {
     return () => {
       isCancelled = true
     }
+  }, [token])
+
+  useEffect(() => {
+    refreshActiveBookings().catch(() => {})
   }, [token])
 
   useEffect(() => {
@@ -115,6 +126,22 @@ function HubDirectoryPage() {
       {bookingMessage && <p className="hub-message" role="status">{bookingMessage}</p>}
       {bookingError && <p className="hub-message hub-message--error" role="alert">{bookingError}</p>}
 
+      <section aria-labelledby="active-trips-title" className="active-trips">
+        <h3 id="active-trips-title">Active trips</h3>
+        {activeBookings.length === 0 ? (
+          <p className="hub-message">No active trips.</p>
+        ) : (
+          <ul>
+            {activeBookings.map((booking) => (
+              <li key={booking.id}>
+                <span>{booking.kartId}</span>
+                <span>{booking.status === 'ACTIVE' ? 'Reserved' : booking.status}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       {isLoadingHubs ? (
         <p className="hub-message" role="status">Loading municipal hubs…</p>
       ) : (
@@ -160,6 +187,7 @@ function HubDirectoryPage() {
                 <div className="kart-list">
                   {hub.karts.map((kart) => (
                     <article
+                      aria-label={kart.id}
                       className={`kart-card${kart.selectable ? '' : ' kart-card--unavailable'}${selectedKartId === kart.id ? ' kart-card--selected' : ''}`}
                       key={kart.id}
                     >
