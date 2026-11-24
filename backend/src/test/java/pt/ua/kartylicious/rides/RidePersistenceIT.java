@@ -1,15 +1,10 @@
 package pt.ua.kartylicious.rides;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import java.time.Instant;
 import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +14,11 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import pt.ua.kartylicious.bookings.Booking;
 import pt.ua.kartylicious.bookings.BookingStatus;
 import pt.ua.kartylicious.bookings.port.BookingRepository;
@@ -28,7 +28,6 @@ import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Tag("Layer1")
 class RidePersistenceIT {
 
   private static final String HUB_ID = "central-square";
@@ -61,7 +60,7 @@ class RidePersistenceIT {
             UserRole.END_USER));
   }
 
-  @Requirement("KARTY-33")
+  @Requirement("KARTY-37")
   @Test
   void startsRideOnAvailableKartAndPersistsInUseState() throws Exception {
     startRide("K-101", USER_ID)
@@ -74,7 +73,7 @@ class RidePersistenceIT {
     assertThat(count("karts where id = 'K-101' and status = 'IN_USE'")).isEqualTo(1);
   }
 
-  @Requirement("KARTY-33")
+  @Requirement("KARTY-37")
   @Test
   void acceptsTheTwentyPercentBatteryBoundary() throws Exception {
     startRide("K-102", USER_ID)
@@ -84,7 +83,7 @@ class RidePersistenceIT {
     assertThat(count("karts where id = 'K-102' and status = 'IN_USE'")).isEqualTo(1);
   }
 
-  @Requirement("KARTY-33")
+  @Requirement("KARTY-37")
   @Test
   void startsRideOnTheUsersReservedKart() throws Exception {
     bookingRepository.save(
@@ -104,7 +103,7 @@ class RidePersistenceIT {
     assertThat(count("karts where id = 'K-105' and status = 'IN_USE'")).isEqualTo(1);
   }
 
-  @Requirement("KARTY-33")
+  @Requirement("KARTY-37")
   @Test
   void rejectsLowBatteryAndFlagsKartUnavailable() throws Exception {
     startRide("K-103", USER_ID)
@@ -115,7 +114,7 @@ class RidePersistenceIT {
     assertThat(count("karts where id = 'K-103' and status = 'LOW_BATTERY'")).isEqualTo(1);
   }
 
-  @Requirement("KARTY-33")
+  @Requirement("KARTY-37")
   @Test
   void rejectsASecondActiveRideForTheSameUser() throws Exception {
     startRide("K-101", USER_ID).andExpect(status().isOk());
@@ -129,7 +128,7 @@ class RidePersistenceIT {
     assertThat(count("karts where id = 'K-102' and status = 'AVAILABLE'")).isEqualTo(1);
   }
 
-  @Requirement("KARTY-33")
+  @Requirement("KARTY-37")
   @Test
   void protectsRideEndpointWithAuthenticationAndEndUserRole() throws Exception {
     mockMvc

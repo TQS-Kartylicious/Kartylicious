@@ -1,18 +1,13 @@
 package pt.ua.kartylicious.bookings;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import java.time.Instant;
 import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -25,9 +20,15 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+
+import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import pt.ua.kartylicious.bookings.port.PaymentPort;
 import pt.ua.kartylicious.registration.UserAccount;
 import pt.ua.kartylicious.registration.UserRole;
@@ -77,7 +78,7 @@ class BookingPersistenceIT {
     when(paymentPort.authorizeSecurityDeposit(any(), any())).thenReturn(true);
   }
 
-  @Requirement("KARTY-32")
+  @Requirement("KARTY-36")
   @Test
   void confirmedBookingIsPersistedListedAsActiveAndReservesTheKart() throws Exception {
     mockMvc
@@ -102,7 +103,7 @@ class BookingPersistenceIT {
     assertThatCount("karts where id = 'K-101' and status = 'RESERVED'", 1);
   }
 
-  @Requirement("KARTY-32")
+  @Requirement("KARTY-36")
   @Test
   void acceptsSixtyMinutesAndRejectsSixtyOneMinutes() throws Exception {
     mockMvc
@@ -127,7 +128,7 @@ class BookingPersistenceIT {
     assertThatCount("bookings", 0);
   }
 
-  @Requirement("KARTY-32")
+  @Requirement("KARTY-36")
   @Test
   void rejectsAnOverlappingBookingButAllowsAConsecutiveBooking() throws Exception {
     var secondUserId = createEndUser("second");
@@ -156,7 +157,7 @@ class BookingPersistenceIT {
     assertThatCount("bookings", 2);
   }
 
-  @Requirement("KARTY-32")
+  @Requirement("KARTY-36")
   @Test
   void enforcesTheTwentyPercentBatteryBoundary() throws Exception {
     postBooking(bearer(endUserToken(FIRST_USER_ID, "END_USER")), "K-102", 10, 20)
@@ -170,7 +171,7 @@ class BookingPersistenceIT {
     assertThatCount("bookings", 0);
   }
 
-  @Requirement("KARTY-32")
+  @Requirement("KARTY-36")
   @Test
   void failedDepositAuthorizationDoesNotCreateAReservation() throws Exception {
     when(paymentPort.authorizeSecurityDeposit(any(), any())).thenReturn(false);
@@ -183,7 +184,7 @@ class BookingPersistenceIT {
     assertThatCount("karts where id = 'K-101' and status = 'AVAILABLE'", 1);
   }
 
-  @Requirement("KARTY-32")
+  @Requirement("KARTY-36")
   @Test
   void bookingEndpointsRequireAnEndUser() throws Exception {
     var operatorId = createUser("operator", UserRole.OPERATOR);

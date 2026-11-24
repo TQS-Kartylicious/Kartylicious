@@ -1,22 +1,23 @@
 package pt.ua.kartylicious.rides;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mock;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import pt.ua.kartylicious.bookings.Booking;
 import pt.ua.kartylicious.bookings.BookingStatus;
 import pt.ua.kartylicious.bookings.port.BookingRepository;
@@ -27,7 +28,6 @@ import pt.ua.kartylicious.hubs.port.HubRepository;
 import pt.ua.kartylicious.rides.port.RideRepository;
 
 @ExtendWith(MockitoExtension.class)
-@Requirement("US3.3")
 class RideServiceTest {
   private static final String HUB_ID = "hub-1";
   private static final String KART_ID = "kart-1";
@@ -47,6 +47,7 @@ class RideServiceTest {
   }
 
   @Test
+  @Requirement("KARTY-37")
   void startsAnAvailableRideAndStartsTheTripTimer() {
     givenKart(new Kart(KART_ID, "Kart 1", 80, KartStatus.AVAILABLE, true, false));
 
@@ -60,6 +61,7 @@ class RideServiceTest {
   }
 
   @Test
+  @Requirement("KARTY-37")
   void startsAReservedRideOnlyForTheUserWhoReservedIt() {
     givenKart(new Kart(KART_ID, "Kart 1", 80, KartStatus.RESERVED, true, false));
     when(bookingRepository.findActiveByKart(HUB_ID, KART_ID))
@@ -71,6 +73,7 @@ class RideServiceTest {
   }
 
   @Test
+  @Requirement("KARTY-37")
   void rejectsAReservedRideOwnedByAnotherUser() {
     givenKart(new Kart(KART_ID, "Kart 1", 80, KartStatus.RESERVED, true, false));
     when(bookingRepository.findActiveByKart(HUB_ID, KART_ID))
@@ -82,6 +85,7 @@ class RideServiceTest {
   }
 
   @Test
+  @Requirement("KARTY-37")
   void rejectsNineteenPercentAndFlagsTheKartAsLowBattery() {
     givenKart(new Kart(KART_ID, "Kart 1", 19, KartStatus.AVAILABLE, true, false));
 
@@ -93,6 +97,7 @@ class RideServiceTest {
   }
 
   @Test
+  @Requirement("KARTY-37")
   void acceptsExactlyTwentyPercentBattery() {
     givenKart(new Kart(KART_ID, "Kart 1", 20, KartStatus.AVAILABLE, true, false));
 
@@ -102,6 +107,7 @@ class RideServiceTest {
   }
 
   @Test
+  @Requirement("KARTY-37")
   void rejectsASecondActiveRide() {
     when(rideRepository.findActiveByUser(USER_ID))
         .thenReturn(
