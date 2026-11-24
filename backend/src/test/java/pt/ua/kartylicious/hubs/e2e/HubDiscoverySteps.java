@@ -1,6 +1,8 @@
 package pt.ua.kartylicious.hubs.e2e;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
@@ -9,15 +11,13 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.microsoft.playwright.options.AriaRole;
+
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 public class HubDiscoverySteps {
 
@@ -90,7 +90,11 @@ public class HubDiscoverySteps {
       Locator card = kartCard(expected.get("id"));
       Locator selectButton = selectKartButton(card);
       boolean expectedSelectable = Boolean.parseBoolean(expected.get("selectable"));
-      assertThat(selectButton.isEnabled()).isEqualTo(expectedSelectable);
+      if (expectedSelectable) {
+        PlaywrightAssertions.assertThat(selectButton).isEnabled();
+      } else {
+        PlaywrightAssertions.assertThat(selectButton).isDisabled();
+      }
       PlaywrightAssertions.assertThat(card.getByLabel("Battery " + expected.get("battery") + "%"))
           .isVisible();
       PlaywrightAssertions.assertThat(card.getByText(expected.get("status"),
@@ -116,7 +120,7 @@ public class HubDiscoverySteps {
 
   private Locator hubButton(String name) {
     return page.getByRole(AriaRole.NAVIGATION,
-            new Page.GetByRoleOptions().setName("Municipal hubs"))
+        new Page.GetByRoleOptions().setName("Municipal hubs"))
         .getByRole(AriaRole.BUTTON)
         .filter(new Locator.FilterOptions().setHasText(name))
         .first();

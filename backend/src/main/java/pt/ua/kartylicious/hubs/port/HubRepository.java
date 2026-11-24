@@ -8,4 +8,8 @@ public interface HubRepository {
   List<Hub> findAll();
 
   Optional<Hub> findById(String id);
+
+  boolean reserveKart(String hubId, String kartId);
+
+  boolean releaseKart(String hubId, String kartId);
 }
