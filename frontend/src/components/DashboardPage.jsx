@@ -1,5 +1,6 @@
 import Brand from './Brand.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
+import HubDirectoryPage from './HubDirectoryPage.jsx'
 
 function DashboardPage({ username }) {
   const { logout, user } = useAuth()
@@ -35,15 +36,15 @@ function DashboardPage({ username }) {
         </span>
       </header>
 
-      <main className="dashboard-main">
-        <div className="dashboard-mark" aria-hidden="true">
-          <span>k</span>
+      <main className="dashboard-main dashboard-main--directory">
+        <div className="dashboard-welcome">
+          <p className="eyebrow">ACCOUNT READY</p>
+          <h1>{username ? `Welcome, ${username}.` : 'Welcome to Kartylicious.'}</h1>
+          <p className="dashboard-copy">Your next ride is waiting at a municipal hub.</p>
         </div>
-        <p className="eyebrow">ACCOUNT CREATED</p>
-        <h1>{username ? `Welcome, ${username}.` : 'Welcome to Kartylicious.'}</h1>
-        <p className="dashboard-copy">
-          Your End User account is ready. This is your Kartylicious dashboard.
-        </p>
+
+        <HubDirectoryPage />
+
         <a className="dashboard-link" href="/">
           Back to Kartylicious <span aria-hidden="true">↗</span>
         </a>
