@@ -57,4 +57,36 @@ public class JpaHubRepositoryAdapter implements HubRepository {
             })
         .orElse(false);
   }
+
+  @Override
+  @Transactional
+  public boolean startKart(String hubId, String kartId) {
+    return repository.lockKart(hubId, kartId)
+        .filter(
+            kart ->
+                (kart.getStatus() == KartStatus.AVAILABLE
+                        || kart.getStatus() == KartStatus.RESERVED)
+                    && kart.isActive()
+                    && !kart.hasCriticalFault()
+                    && kart.getBatteryLevel() >= 20)
+        .map(
+            kart -> {
+              kart.setStatus(KartStatus.IN_USE);
+              return true;
+            })
+        .orElse(false);
+  }
+
+  @Override
+  @Transactional
+  public boolean markKartLowBattery(String hubId, String kartId) {
+    return repository.lockKart(hubId, kartId)
+        .filter(kart -> kart.getBatteryLevel() < 20)
+        .map(
+            kart -> {
+              kart.setStatus(KartStatus.LOW_BATTERY);
+              return true;
+            })
+        .orElse(false);
+  }
 }
