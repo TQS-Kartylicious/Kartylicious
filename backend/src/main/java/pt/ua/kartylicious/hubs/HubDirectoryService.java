@@ -1,7 +1,9 @@
 package pt.ua.kartylicious.hubs;
 
 import java.util.List;
+
 import org.springframework.stereotype.Service;
+
 import pt.ua.kartylicious.hubs.port.HubRepository;
 
 @Service
@@ -44,8 +46,12 @@ public class HubDirectoryService {
   }
 
   private boolean isSelectable(Kart kart) {
-    return displayStatus(kart) == KartStatus.AVAILABLE;
+    return kart.active()
+        && !kart.criticalFault()
+        && kart.batteryLevel() >= MINIMUM_BATTERY_LEVEL
+        && displayStatus(kart) == KartStatus.AVAILABLE;
   }
+
 
   private KartStatus displayStatus(Kart kart) {
     if (kart.criticalFault()
@@ -63,6 +69,7 @@ public class HubDirectoryService {
       return KartStatus.LOW_BATTERY;
     }
     if (kart.status() == KartStatus.LOW_BATTERY
+        && kart.active()
         && kart.batteryLevel() >= MINIMUM_BATTERY_LEVEL) {
       return KartStatus.AVAILABLE;
     }
