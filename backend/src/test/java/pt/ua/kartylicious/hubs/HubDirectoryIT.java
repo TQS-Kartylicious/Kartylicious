@@ -1,12 +1,8 @@
 package pt.ua.kartylicious.hubs;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import java.time.Instant;
 import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +12,12 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
+import pt.ua.kartylicious.hubs.persistence.HubTestDataResetter;
 import pt.ua.kartylicious.registration.UserAccount;
 import pt.ua.kartylicious.registration.UserRole;
 import pt.ua.kartylicious.registration.port.UserAccountRepository;
@@ -30,7 +32,23 @@ class HubDirectoryIT {
 
   @Autowired private UserAccountRepository userAccountRepository;
 
+  @Autowired private HubTestDataResetter hubTestDataResetter;
+
   private UUID endUserId;
+
+  @BeforeEach
+  void setUp() {
+    hubTestDataResetter.resetHubs();
+    endUserId = UUID.randomUUID();
+    userAccountRepository.save(
+        new UserAccount(
+            endUserId,
+            "karty-35-end-user-" + endUserId,
+            "karty-35-end-user-" + endUserId + "@example.com",
+            "not-used",
+            UserRole.END_USER));
+  }
+  // ... resto do teste igual
 
   @BeforeEach
   void createEndUserAccount() {
