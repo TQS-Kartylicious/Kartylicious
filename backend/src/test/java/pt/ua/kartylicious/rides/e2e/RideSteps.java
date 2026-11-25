@@ -1,24 +1,25 @@
 package pt.ua.kartylicious.rides.e2e;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import com.microsoft.playwright.options.AriaRole;
-
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
+import pt.ua.kartylicious.e2e.support.E2eDatabaseSupport;
 import pt.ua.kartylicious.e2e.support.E2eSupport;
 import pt.ua.kartylicious.e2e.support.PlaywrightContext;
 
 public class RideSteps {
 
   private static final String PASSWORD = "strong-pass-123";
-  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+  private static final DateTimeFormatter DATE_TIME_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
 
   private Page page() {
     return PlaywrightContext.page();
@@ -56,7 +57,7 @@ public class RideSteps {
   }
 
   @When("I reserve the {string} mini-kart for an immediate ride")
-  public void reserveKart(String kartId) {
+  public void reserveKart(String kartId) throws Exception {
     selectKartForImmediateRide(kartId);
     page()
         .getByLabel("Start time")
@@ -70,6 +71,7 @@ public class RideSteps {
     assertThat(
         page().getByText("Booking confirmed.", new Page.GetByTextOptions().setExact(true)))
         .isVisible();
+    makeReservationCurrent(kartId);
   }
 
   @When("I click {string} for my reserved mini-kart")
@@ -94,31 +96,33 @@ public class RideSteps {
   public void attemptRide(String kartId) {
     kartCard(kartId)
         .getByRole(
-            AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Start Ride").setExact(true))
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName("Start Ride").setExact(true))
         .click();
   }
 
-  @Given("I have started a ride on the {string} mini-kart at the {string} municipal hub")
-public void startFirstRide(String kartId, String hubName) {
-  selectHub(hubName);
-  Locator startButton = kartCard(kartId)
-      .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Start Ride").setExact(true));
-  startButton.waitFor();
-  startButton.click();
-  try {
-    assertThat(page().getByRole(AriaRole.STATUS).getByText(kartId)).isVisible();
-  } catch (AssertionError e) {
-    System.err.println("=== DEBUG startFirstRide (" + kartId + " @ " + hubName + ") ===");
-    System.err.println("URL: " + page().url());
-    Locator alerts = page().getByRole(AriaRole.ALERT);
-    System.err.println("Alerts count: " + alerts.count());
-    for (int i = 0; i < alerts.count(); i++) {
-      System.err.println("Alert[" + i + "]: " + alerts.nth(i).innerText());
-    }
-    System.err.println("Body text:\n" + page().locator("body").innerText());
-    throw e;
+  @Then("I cannot start a ride on the {string} mini-kart")
+  public void cannotStartRide(String kartId) {
+    assertThat(
+            kartCard(kartId)
+                .getByRole(
+                    AriaRole.BUTTON,
+                    new Locator.GetByRoleOptions().setName("Start Ride").setExact(true)))
+        .hasCount(0);
   }
-}
+
+  @Given("I have started a ride on the {string} mini-kart at the {string} municipal hub")
+  public void startFirstRide(String kartId, String hubName) {
+    selectHub(hubName);
+    Locator startButton =
+        kartCard(kartId)
+            .getByRole(
+                AriaRole.BUTTON,
+                new Locator.GetByRoleOptions().setName("Start Ride").setExact(true));
+    startButton.waitFor();
+    startButton.click();
+    assertThat(page().getByRole(AriaRole.STATUS).getByText(kartId)).isVisible();
+  }
 
   @Then("the ride is started for the {string} mini-kart")
   public void rideStarted(String kartId) {
@@ -132,10 +136,12 @@ public void startFirstRide(String kartId, String hubName) {
 
   @Then("the ride is not started")
   public void rideIsNotStarted() {
-    Locator activeRide = page().getByRole(AriaRole.STATUS, new Page.GetByRoleOptions().setName("RIDE IN PROGRESS"));
-    if (activeRide.count() > 0) {
-      assertThat(activeRide).isVisible();
-    }
+    assertThat(
+            page()
+                .getByRole(
+                    AriaRole.STATUS,
+                    new Page.GetByRoleOptions().setName("RIDE IN PROGRESS")))
+        .hasCount(0);
   }
 
   @Then("I see the ride error {string}")
@@ -164,6 +170,18 @@ public void startFirstRide(String kartId, String hubName) {
 
   private Locator kartCard(String kartId) {
     return page().locator(".kart-card").filter(new Locator.FilterOptions().setHasText(kartId));
+  }
+
+  private void makeReservationCurrent(String kartId) throws Exception {
+    try (var connection = E2eDatabaseSupport.openConnection();
+        var statement =
+            connection.prepareStatement(
+                "update bookings set starts_at = current_timestamp - interval '1 minute', "
+                    + "ends_at = current_timestamp + interval '30 minutes' "
+                    + "where kart_id = ? and status = 'ACTIVE'")) {
+      statement.setString(1, kartId);
+      statement.executeUpdate();
+    }
   }
 
   private static String token() {

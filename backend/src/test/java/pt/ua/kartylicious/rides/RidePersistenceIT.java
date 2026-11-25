@@ -1,9 +1,19 @@
 package pt.ua.kartylicious.rides;
 
-import java.time.Instant;
-import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,32 +23,48 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import pt.ua.kartylicious.bookings.Booking;
 import pt.ua.kartylicious.bookings.BookingStatus;
 import pt.ua.kartylicious.bookings.port.BookingRepository;
+import pt.ua.kartylicious.bookings.port.PaymentPort;
 import pt.ua.kartylicious.registration.UserAccount;
 import pt.ua.kartylicious.registration.UserRole;
 import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Testcontainers
 class RidePersistenceIT {
 
   private static final String HUB_ID = "central-square";
   private static final UUID USER_ID =
       UUID.fromString("00000000-0000-0000-0000-000000000033");
 
+  @Container
+  private static final PostgreSQLContainer POSTGRES =
+      new PostgreSQLContainer("postgres:16-alpine");
+
   @Autowired private MockMvc mockMvc;
   @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private JwtEncoder jwtEncoder;
   @Autowired private BookingRepository bookingRepository;
   @Autowired private UserAccountRepository userAccountRepository;
+  @MockitoBean private PaymentPort paymentPort;
+
+  @DynamicPropertySource
+  static void registerDatabaseProperties(DynamicPropertyRegistry registry) {
+    registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+    registry.add("spring.datasource.username", POSTGRES::getUsername);
+    registry.add("spring.datasource.password", POSTGRES::getPassword);
+    registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+  }
 
   @BeforeEach
   void resetRideState() {
@@ -58,6 +84,7 @@ class RidePersistenceIT {
             "karty-33-end-user@example.com",
             "not-used",
             UserRole.END_USER));
+    when(paymentPort.authorizeSecurityDeposit(any(), any())).thenReturn(true);
   }
 
   @Requirement("KARTY-37")
@@ -92,7 +119,7 @@ class RidePersistenceIT {
             USER_ID,
             HUB_ID,
             "K-105",
-            Instant.now().plusSeconds(60),
+            Instant.now().minusSeconds(60),
             Instant.now().plusSeconds(1_200),
             BookingStatus.ACTIVE));
 
@@ -101,6 +128,44 @@ class RidePersistenceIT {
         .andExpect(jsonPath("$.kartId").value("K-105"));
 
     assertThat(count("karts where id = 'K-105' and status = 'IN_USE'")).isEqualTo(1);
+    assertThat(count("bookings where kart_id = 'K-105' and status = 'COMPLETED'"))
+        .isEqualTo(1);
+  }
+
+  @Requirement("KARTY-37")
+  @Test
+  void rejectsReservedRideBeforeItsBookingWindow() throws Exception {
+    bookingRepository.save(
+        new Booking(
+            UUID.randomUUID(),
+            USER_ID,
+            HUB_ID,
+            "K-105",
+            Instant.now().plusSeconds(300),
+            Instant.now().plusSeconds(1_200),
+            BookingStatus.ACTIVE));
+
+    startRide("K-105", USER_ID)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message").value("The kart is no longer available."));
+
+    assertThat(count("rides")).isZero();
+    assertThat(count("bookings where kart_id = 'K-105' and status = 'ACTIVE'"))
+        .isEqualTo(1);
+  }
+
+  @Requirement("KARTY-37")
+  @Test
+  void immediateRideRequiresDepositAuthorization() throws Exception {
+    when(paymentPort.authorizeSecurityDeposit(any(), any())).thenReturn(false);
+
+    startRide("K-101", USER_ID)
+        .andExpect(status().isPaymentRequired())
+        .andExpect(jsonPath("$.message").value("Security deposit authorization failed."));
+
+    assertThat(count("rides")).isZero();
+    assertThat(count("karts where id = 'K-101' and status = 'AVAILABLE'")).isEqualTo(1);
+    verify(paymentPort).authorizeSecurityDeposit(any(), any());
   }
 
   @Requirement("KARTY-37")
@@ -146,6 +211,31 @@ class RidePersistenceIT {
 
     startRide("K-101", operatorId, "OPERATOR")
         .andExpect(status().isForbidden());
+  }
+
+  @Requirement("KARTY-37")
+  @Test
+  void concurrentRequestsForTheSameUserCreateOnlyOneRide() throws Exception {
+    var ready = new CountDownLatch(2);
+    var start = new CountDownLatch(1);
+
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var first = executor.submit(() -> concurrentRideStatus("K-101", ready, start));
+      var second = executor.submit(() -> concurrentRideStatus("K-102", ready, start));
+      ready.await();
+      start.countDown();
+
+      assertThat(List.of(first.get(), second.get())).containsExactlyInAnyOrder(200, 409);
+    }
+
+    assertThat(count("rides where status = 'ACTIVE'")).isEqualTo(1);
+  }
+
+  private int concurrentRideStatus(String kartId, CountDownLatch ready, CountDownLatch start)
+      throws Exception {
+    ready.countDown();
+    start.await();
+    return startRide(kartId, USER_ID).andReturn().getResponse().getStatus();
   }
 
   private org.springframework.test.web.servlet.ResultActions startRide(

@@ -29,3 +29,9 @@ class ActiveRideException extends RideException {
     super("Only one active trip is allowed per user.");
   }
 }
+
+class RideDepositAuthorizationException extends RideException {
+  RideDepositAuthorizationException() {
+    super("Security deposit authorization failed.");
+  }
+}

@@ -1,5 +1,6 @@
 package pt.ua.kartylicious.bookings;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -8,44 +9,66 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.ua.kartylicious.bookings.port.BookingRepository;
 import pt.ua.kartylicious.bookings.port.PaymentPort;
+import pt.ua.kartylicious.config.MunicipalRulesProperties;
 import pt.ua.kartylicious.hubs.Kart;
 import pt.ua.kartylicious.hubs.KartStatus;
 import pt.ua.kartylicious.hubs.port.HubRepository;
+import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
 @Service
 public class BookingService {
-  public static final long DEFAULT_MAXIMUM_DURATION_MINUTES = 60;
-
   private final HubRepository hubRepository;
   private final BookingRepository bookingRepository;
   private final PaymentPort paymentPort;
+  private final UserAccountRepository userAccountRepository;
+  private final ReservationLifecycleService reservationLifecycleService;
+  private final MunicipalRulesProperties municipalRules;
+  private final Clock clock;
 
   public BookingService(
-      HubRepository hubRepository, BookingRepository bookingRepository, PaymentPort paymentPort) {
+      HubRepository hubRepository,
+      BookingRepository bookingRepository,
+      PaymentPort paymentPort,
+      UserAccountRepository userAccountRepository,
+      ReservationLifecycleService reservationLifecycleService,
+      MunicipalRulesProperties municipalRules,
+      Clock clock) {
     this.hubRepository = hubRepository;
     this.bookingRepository = bookingRepository;
     this.paymentPort = paymentPort;
+    this.userAccountRepository = userAccountRepository;
+    this.reservationLifecycleService = reservationLifecycleService;
+    this.municipalRules = municipalRules;
+    this.clock = clock;
   }
 
   @Transactional
-  public synchronized BookingResponse book(BookingRequest request, UUID userId) {
+  public BookingResponse book(BookingRequest request, UUID userId) {
     validateDuration(request.startsAt(), request.endsAt());
-    releaseExpiredReservation(request.hubId(), request.kartId());
+    var user =
+        userAccountRepository
+            .lockById(userId)
+            .orElseThrow(() -> new BookingValidationException("User account not found."));
+    if (!user.active()) {
+      throw new BookingValidationException("User account is inactive.");
+    }
+    var activeBookings =
+        reservationLifecycleService.activeByKart(request.hubId(), request.kartId());
     var kart = findKart(request.hubId(), request.kartId());
-    if (!isBookable(kart, request.hubId(), request.kartId())) {
+    if (!isBookable(kart, activeBookings)) {
       throw new KartUnavailableException();
     }
-    if (bookingRepository.findActiveByKart(request.hubId(), request.kartId()).stream()
+    if (activeBookings.stream()
         .anyMatch(existing -> overlaps(existing, request.startsAt(), request.endsAt()))) {
+      throw new KartUnavailableException();
+    }
+    if (!hubRepository.reserveKart(request.hubId(), request.kartId())) {
       throw new KartUnavailableException();
     }
 
     var bookingId = UUID.randomUUID();
     if (!paymentPort.authorizeSecurityDeposit(userId, bookingId)) {
       throw new DepositAuthorizationException();
-    }
-    if (!hubRepository.reserveKart(request.hubId(), request.kartId())) {
-      throw new KartUnavailableException();
     }
     var booking =
         new Booking(
@@ -56,20 +79,18 @@ public class BookingService {
             request.startsAt(),
             request.endsAt(),
             BookingStatus.ACTIVE);
-    bookingRepository.save(booking);
+    try {
+      bookingRepository.save(booking);
+    } catch (RuntimeException exception) {
+      paymentPort.releaseSecurityDeposit(userId, bookingId);
+      throw exception;
+    }
     return toResponse(booking, "Booking confirmed.");
   }
 
-  private void releaseExpiredReservation(String hubId, String kartId) {
-    var now = Instant.now();
-    bookingRepository.findActiveByKart(hubId, kartId).stream()
-        .filter(booking -> !booking.endsAt().isAfter(now))
-        .findFirst()
-        .ifPresent(booking -> hubRepository.releaseKart(hubId, kartId));
-  }
-
+  @Transactional
   public List<BookingResponse> activeBookings(UUID userId) {
-    return bookingRepository.findActiveByUser(userId).stream()
+    return reservationLifecycleService.activeByUser(userId).stream()
         .map(booking -> toResponse(booking, null))
         .toList();
   }
@@ -78,13 +99,14 @@ public class BookingService {
     if (startsAt == null || endsAt == null || !endsAt.isAfter(startsAt)) {
       throw new BookingValidationException("Booking duration must be positive.");
     }
-    if (!startsAt.isAfter(Instant.now())) {
+    if (!startsAt.isAfter(clock.instant())) {
       throw new BookingValidationException("Booking start time must be in the future.");
     }
-var duration = Duration.between(startsAt, endsAt);
-    if (duration.compareTo(Duration.ofMinutes(DEFAULT_MAXIMUM_DURATION_MINUTES)) > 0) {
+    var maximumDurationMinutes = municipalRules.getMaximumReservationDurationMinutes();
+    var duration = Duration.between(startsAt, endsAt);
+    if (duration.compareTo(Duration.ofMinutes(maximumDurationMinutes)) > 0) {
       throw new BookingValidationException(
-          "Maximum permitted rental duration: " + DEFAULT_MAXIMUM_DURATION_MINUTES);
+          "Maximum permitted rental duration: " + maximumDurationMinutes);
     }
   }
 
@@ -95,11 +117,10 @@ var duration = Duration.between(startsAt, endsAt);
         .orElseThrow(KartUnavailableException::new);
   }
 
-  private boolean isBookable(Kart kart, String hubId, String kartId) {
+  private boolean isBookable(Kart kart, List<Booking> activeBookings) {
     var statusAllowsBooking =
         kart.status() == KartStatus.AVAILABLE
-            || (kart.status() == KartStatus.RESERVED
-                && !bookingRepository.findActiveByKart(hubId, kartId).isEmpty());
+            || (kart.status() == KartStatus.RESERVED && !activeBookings.isEmpty());
     return statusAllowsBooking
         && kart.active()
         && kart.batteryLevel() >= 20

@@ -31,7 +31,8 @@ function LoginPage() {
         setFormError(result.body?.message || 'Incorrect email or password.')
         return
       }
-      window.history.pushState({}, '', '/dashboard')
+      const destination = result.user?.role === 'ADMIN' ? '/admin/users' : '/dashboard'
+      window.history.pushState({}, '', destination)
       window.dispatchEvent(new PopStateEvent('popstate'))
     } catch {
       setFormError('We could not connect to Kartylicious. Please try again.')

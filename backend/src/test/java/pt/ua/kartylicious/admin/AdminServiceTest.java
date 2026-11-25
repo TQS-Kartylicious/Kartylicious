@@ -146,6 +146,7 @@ class AdminServiceTest {
         new UserAccount(id, "admin", "admin@example.com", "hash", UserRole.ADMIN, true);
     when(repository.lockActiveAdmins()).thenReturn(List.of(admin));
     when(repository.findById(id)).thenReturn(Optional.of(admin));
+    when(repository.lockById(id)).thenReturn(Optional.of(admin));
     when(repository.countActiveAdmins()).thenReturn(1L);
 
     assertThatThrownBy(() -> service.changeRole(id, "END_USER"))
@@ -161,7 +162,7 @@ class AdminServiceTest {
     var inactive =
         new UserAccount(id, "staff", "staff@example.com", "hash", UserRole.OPERATOR, false);
     when(repository.lockActiveAdmins()).thenReturn(List.of());
-    when(repository.findById(id)).thenReturn(Optional.of(inactive));
+    when(repository.lockById(id)).thenReturn(Optional.of(inactive));
 
     assertThat(service.deactivate(id).active()).isFalse();
     verify(userActivityPort, never()).hasActiveRideOrReservation(id);
@@ -169,7 +170,7 @@ class AdminServiceTest {
 
     var active =
         new UserAccount(id, "staff", "staff@example.com", "hash", UserRole.OPERATOR, true);
-    when(repository.findById(id)).thenReturn(Optional.of(active));
+    when(repository.lockById(id)).thenReturn(Optional.of(active));
     when(userActivityPort.hasActiveRideOrReservation(id)).thenReturn(true);
     assertThatThrownBy(() -> service.deactivate(id))
         .isInstanceOf(AdminExceptions.ActiveRideOrReservationException.class);
@@ -183,7 +184,7 @@ class AdminServiceTest {
     var admin =
         new UserAccount(id, "admin", "admin@example.com", "hash", UserRole.ADMIN, true);
     when(repository.lockActiveAdmins()).thenReturn(List.of(admin));
-    when(repository.findById(id)).thenReturn(Optional.of(admin));
+    when(repository.lockById(id)).thenReturn(Optional.of(admin));
     when(userActivityPort.hasActiveRideOrReservation(id)).thenReturn(false);
     when(repository.countActiveAdmins()).thenReturn(2L);
     when(repository.save(any(UserAccount.class)))

@@ -1,4 +1,4 @@
-@KARTY-76
+@KARTY-76 @BR12
 Feature: Platform admin user management
   As a Platform Admin
   I want to create and manage staff accounts

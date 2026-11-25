@@ -1,7 +1,5 @@
 package pt.ua.kartylicious.auth.e2e;
 
-import java.util.UUID;
-
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
@@ -14,6 +12,7 @@ import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.util.UUID;
 
 public class LoginSteps {
 
@@ -24,14 +23,14 @@ public class LoginSteps {
   private String password;
 
 
-  @Before
+  @Before("@KARTY-34")
   public void startBrowser() {
     playwright = Playwright.create();
     browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
     page = browser.newPage();
   }
 
-  @After
+  @After("@KARTY-34")
   public void closeBrowser() {
     if (page != null) page.close();
     if (browser != null) browser.close();

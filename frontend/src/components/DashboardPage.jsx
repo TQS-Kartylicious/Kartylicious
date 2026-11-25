@@ -4,6 +4,7 @@ import HubDirectoryPage from './HubDirectoryPage.jsx'
 
 function DashboardPage({ username }) {
   const { logout, user } = useAuth()
+  const isEndUser = user?.role === 'END_USER'
 
   function handleLogout() {
     logout()
@@ -43,7 +44,16 @@ function DashboardPage({ username }) {
           <p className="dashboard-copy">Your next ride is waiting at a municipal hub.</p>
         </div>
 
-        <HubDirectoryPage />
+        {isEndUser ? (
+          <HubDirectoryPage />
+        ) : (
+          <section className="active-trips" aria-labelledby="staff-dashboard-title">
+            <h2 id="staff-dashboard-title">{staffRoleName(user?.role)} dashboard</h2>
+            <p className="hub-message">
+              This account does not use the end-user rental dashboard.
+            </p>
+          </section>
+        )}
 
         <a className="dashboard-link" href="/">
           Back to Kartylicious <span aria-hidden="true">↗</span>
@@ -67,3 +77,10 @@ function DashboardPage({ username }) {
 }
 
 export default DashboardPage
+
+function staffRoleName(role) {
+  if (role === 'ADMIN') return 'Administration'
+  if (role === 'OPERATOR') return 'Service operator'
+  if (role === 'MUNICIPAL_WORKER') return 'Municipal worker'
+  return 'Staff'
+}

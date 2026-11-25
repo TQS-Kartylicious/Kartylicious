@@ -1,14 +1,18 @@
 package pt.ua.kartylicious.rides;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.ua.kartylicious.bookings.Booking;
-import pt.ua.kartylicious.bookings.port.BookingRepository;
+import pt.ua.kartylicious.bookings.ReservationLifecycleService;
+import pt.ua.kartylicious.bookings.port.PaymentPort;
 import pt.ua.kartylicious.hubs.Kart;
 import pt.ua.kartylicious.hubs.KartStatus;
 import pt.ua.kartylicious.hubs.port.HubRepository;
+import pt.ua.kartylicious.registration.port.UserAccountRepository;
 import pt.ua.kartylicious.rides.port.RideRepository;
 
 @Service
@@ -16,27 +20,45 @@ public class RideService {
   private static final int MINIMUM_BATTERY_LEVEL = 20;
 
   private final HubRepository hubRepository;
-  private final BookingRepository bookingRepository;
+  private final ReservationLifecycleService reservationLifecycleService;
   private final RideRepository rideRepository;
+  private final UserAccountRepository userAccountRepository;
+  private final PaymentPort paymentPort;
+  private final Clock clock;
 
   public RideService(
       HubRepository hubRepository,
-      BookingRepository bookingRepository,
-      RideRepository rideRepository) {
+      ReservationLifecycleService reservationLifecycleService,
+      RideRepository rideRepository,
+      UserAccountRepository userAccountRepository,
+      PaymentPort paymentPort,
+      Clock clock) {
     this.hubRepository = hubRepository;
-    this.bookingRepository = bookingRepository;
+    this.reservationLifecycleService = reservationLifecycleService;
     this.rideRepository = rideRepository;
+    this.userAccountRepository = userAccountRepository;
+    this.paymentPort = paymentPort;
+    this.clock = clock;
   }
 
   @Transactional
-  public synchronized RideResponse start(RideRequest request, UUID userId) {
+  public RideResponse start(RideRequest request, UUID userId) {
     if (request == null || request.hubId() == null || request.kartId() == null) {
       throw new RideValidationException("Hub and kart are required.");
+    }
+    var user =
+        userAccountRepository
+            .lockById(userId)
+            .orElseThrow(() -> new RideValidationException("User account not found."));
+    if (!user.active()) {
+      throw new RideValidationException("User account is inactive.");
     }
     if (!rideRepository.findActiveByUser(userId).isEmpty()) {
       throw new ActiveRideException();
     }
 
+    var activeBookings =
+        reservationLifecycleService.activeByKart(request.hubId(), request.kartId());
     var kart = findKart(request.hubId(), request.kartId());
     if (kart.batteryLevel() < MINIMUM_BATTERY_LEVEL) {
       hubRepository.markKartLowBattery(request.hubId(), request.kartId());
@@ -48,22 +70,41 @@ public class RideService {
     if (!kart.active() || kart.criticalFault()) {
       throw new RideKartUnavailableException();
     }
-    if (kart.status() == KartStatus.RESERVED && !hasUserReservation(request, userId)) {
+
+    var now = clock.instant();
+    var validReservation = findValidReservation(activeBookings, userId, now);
+    var expectedStatus = validReservation == null ? KartStatus.AVAILABLE : KartStatus.RESERVED;
+    if (kart.status() != expectedStatus || (validReservation == null && !activeBookings.isEmpty())) {
       throw new RideKartUnavailableException();
     }
 
-    if (!hubRepository.startKart(request.hubId(), request.kartId())) {
+    if (!hubRepository.startKart(request.hubId(), request.kartId(), expectedStatus)) {
       throw new RideKartUnavailableException();
+    }
+    var rideId = UUID.randomUUID();
+    var immediateRide = validReservation == null;
+    if (immediateRide && !paymentPort.authorizeSecurityDeposit(userId, rideId)) {
+      throw new RideDepositAuthorizationException();
     }
     var ride =
         new Ride(
-            UUID.randomUUID(),
+            rideId,
             userId,
             request.hubId(),
             request.kartId(),
-            Instant.now(),
+            now,
             RideStatus.ACTIVE);
-    rideRepository.save(ride);
+    try {
+      rideRepository.save(ride);
+      if (validReservation != null) {
+        reservationLifecycleService.complete(validReservation);
+      }
+    } catch (RuntimeException exception) {
+      if (immediateRide) {
+        paymentPort.releaseSecurityDeposit(userId, rideId);
+      }
+      throw exception;
+    }
     return toResponse(ride, "Ride started.");
   }
 
@@ -74,10 +115,13 @@ public class RideService {
         .orElseThrow(RideKartUnavailableException::new);
   }
 
-  private boolean hasUserReservation(RideRequest request, UUID userId) {
-    return bookingRepository.findActiveByKart(request.hubId(), request.kartId()).stream()
-        .map(Booking::userId)
-        .anyMatch(userId::equals);
+  private Booking findValidReservation(List<Booking> bookings, UUID userId, Instant now) {
+    return bookings.stream()
+        .filter(booking -> booking.userId().equals(userId))
+        .filter(booking -> !booking.startsAt().isAfter(now))
+        .filter(booking -> booking.endsAt().isAfter(now))
+        .findFirst()
+        .orElse(null);
   }
 
   private boolean isEligibleStatus(KartStatus status) {

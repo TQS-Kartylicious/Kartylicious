@@ -25,4 +25,10 @@ public class RideExceptionHandler {
   public Map<String, String> lowBattery(LowBatteryException exception) {
     return Map.of("message", exception.getMessage());
   }
+
+  @ExceptionHandler(RideDepositAuthorizationException.class)
+  @ResponseStatus(HttpStatus.PAYMENT_REQUIRED)
+  public Map<String, String> deposit(RideDepositAuthorizationException exception) {
+    return Map.of("message", exception.getMessage());
+  }
 }

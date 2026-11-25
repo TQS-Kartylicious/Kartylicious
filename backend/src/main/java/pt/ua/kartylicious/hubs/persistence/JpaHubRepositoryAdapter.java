@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import pt.ua.kartylicious.hubs.Hub;
+import pt.ua.kartylicious.hubs.Kart;
 import pt.ua.kartylicious.hubs.KartStatus;
 import pt.ua.kartylicious.hubs.port.HubRepository;
 
@@ -24,6 +25,12 @@ public class JpaHubRepositoryAdapter implements HubRepository {
   @Override
   public Optional<Hub> findById(String id) {
     return repository.findById(id).map(JpaHubEntity::toHub);
+  }
+
+  @Override
+  @Transactional
+  public Optional<Kart> lockKart(String hubId, String kartId) {
+    return repository.lockKart(hubId, kartId).map(JpaKartEntity::toKart);
   }
 
   @Override
@@ -60,12 +67,11 @@ public class JpaHubRepositoryAdapter implements HubRepository {
 
   @Override
   @Transactional
-  public boolean startKart(String hubId, String kartId) {
+  public boolean startKart(String hubId, String kartId, KartStatus expectedStatus) {
     return repository.lockKart(hubId, kartId)
         .filter(
             kart ->
-                (kart.getStatus() == KartStatus.AVAILABLE
-                        || kart.getStatus() == KartStatus.RESERVED)
+                kart.getStatus() == expectedStatus
                     && kart.isActive()
                     && !kart.hasCriticalFault()
                     && kart.getBatteryLevel() >= 20)

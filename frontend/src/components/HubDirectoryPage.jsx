@@ -259,7 +259,7 @@ function HubDirectoryPage() {
                       >
                         {selectedKartId === kart.id ? 'Selected' : 'Select kart'}
                       </button>
-                      {(
+                      {kart.selectable && (
                         <button
                           className="kart-start"
                           disabled={isStartingRide}

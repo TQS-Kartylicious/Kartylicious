@@ -1,13 +1,22 @@
 package pt.ua.kartylicious.bookings;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import java.time.Instant;
 import java.util.UUID;
-
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -20,15 +29,11 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
+import pt.ua.kartylicious.bookings.port.BookingRepository;
 import pt.ua.kartylicious.bookings.port.PaymentPort;
 import pt.ua.kartylicious.registration.UserAccount;
 import pt.ua.kartylicious.registration.UserRole;
@@ -53,6 +58,7 @@ class BookingPersistenceIT {
   @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private JwtEncoder jwtEncoder;
   @Autowired private UserAccountRepository userAccountRepository;
+  @Autowired private BookingRepository bookingRepository;
 
   @MockitoBean private PaymentPort paymentPort;
 
@@ -192,6 +198,67 @@ class BookingPersistenceIT {
     mockMvc.perform(post("/api/bookings")).andExpect(status().isUnauthorized());
     postBooking(bearer(endUserToken(operatorId, "OPERATOR")), FIRST_KART_ID, 10, 20)
         .andExpect(status().isForbidden());
+  }
+
+  @Requirement("KARTY-36")
+  @Test
+  void expiredBookingIsNotListedAndReleasesItsKartAndDeposit() throws Exception {
+    var bookingId = UUID.randomUUID();
+    bookingRepository.save(
+        new Booking(
+            bookingId,
+            FIRST_USER_ID,
+            HUB_ID,
+            FIRST_KART_ID,
+            Instant.now().minusSeconds(1_200),
+            Instant.now().minusSeconds(600),
+            BookingStatus.ACTIVE));
+    jdbcTemplate.update("update karts set status = 'RESERVED' where id = 'K-101'");
+
+    mockMvc
+        .perform(
+            get("/api/bookings/active")
+                .header("Authorization", bearer(endUserToken(FIRST_USER_ID, "END_USER"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
+
+    assertThatCount("bookings where id = '" + bookingId + "' and status = 'EXPIRED'", 1);
+    assertThatCount("karts where id = 'K-101' and status = 'AVAILABLE'", 1);
+    verify(paymentPort).releaseSecurityDeposit(FIRST_USER_ID, bookingId);
+  }
+
+  @Requirement("KARTY-36")
+  @Test
+  void concurrentOverlappingRequestsCreateOnlyOneBooking() throws Exception {
+    var secondUserId = createEndUser("concurrent-second");
+    var firstToken = bearer(endUserToken(FIRST_USER_ID, "END_USER"));
+    var secondToken = bearer(endUserToken(secondUserId, "END_USER"));
+    var ready = new CountDownLatch(2);
+    var start = new CountDownLatch(1);
+
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var first =
+          executor.submit(() -> concurrentBookingStatus(firstToken, ready, start));
+      var second =
+          executor.submit(() -> concurrentBookingStatus(secondToken, ready, start));
+      ready.await();
+      start.countDown();
+
+      assertThat(java.util.List.of(first.get(), second.get()))
+          .containsExactlyInAnyOrder(200, 409);
+    }
+
+    assertThatCount("bookings where kart_id = 'K-101' and status = 'ACTIVE'", 1);
+  }
+
+  private int concurrentBookingStatus(String token, CountDownLatch ready, CountDownLatch start)
+      throws Exception {
+    ready.countDown();
+    start.await();
+    return postBooking(token, FIRST_KART_ID, 10, 30)
+        .andReturn()
+        .getResponse()
+        .getStatus();
   }
 
   private org.springframework.test.web.servlet.ResultActions postBooking(

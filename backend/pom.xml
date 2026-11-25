@@ -198,7 +198,7 @@
 							<excludes combine.self="override"/>
 							<includes combine.self="override">
 								<include>**/*PlaywrightIT.java</include>
-								<include>**/*CucumberSuite.java</include>
+								<include>**/CucumberSuite.java</include>
 							</includes>
 						</configuration>
 					</plugin>

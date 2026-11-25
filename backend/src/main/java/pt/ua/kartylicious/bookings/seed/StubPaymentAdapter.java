@@ -8,7 +8,12 @@ import pt.ua.kartylicious.bookings.port.PaymentPort;
 @Component
 public class StubPaymentAdapter implements PaymentPort {
   @Override
-  public boolean authorizeSecurityDeposit(UUID userId, UUID bookingId) {
+  public boolean authorizeSecurityDeposit(UUID userId, UUID operationId) {
     return true;
+  }
+
+  @Override
+  public void releaseSecurityDeposit(UUID userId, UUID operationId) {
+    // The simulator keeps no external hold, so there is nothing to release.
   }
 }

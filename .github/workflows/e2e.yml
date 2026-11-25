@@ -39,8 +39,13 @@ jobs:
           docker compose logs
           exit 1
 
-      - name: Install browser system dependencies
-        run: npx --yes playwright install-deps chromium
+      - name: Install Playwright Chromium and system dependencies
+        working-directory: backend
+        run: >
+          ./mvnw -B exec:java
+          -Dexec.mainClass=com.microsoft.playwright.CLI
+          -Dexec.classpathScope=test
+          -Dexec.args="install --with-deps chromium"
 
       - name: Run e2e tests
         working-directory: backend
