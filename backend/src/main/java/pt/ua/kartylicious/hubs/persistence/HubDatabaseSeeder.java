@@ -18,6 +18,7 @@ public class HubDatabaseSeeder implements CommandLineRunner {
   @Override
   public void run(String... args) {
     if (repository.count() != 0) {
+      initializeMissingCapacity();
       return;
     }
     repository.saveAll(
@@ -50,7 +51,21 @@ public class HubDatabaseSeeder implements CommandLineRunner {
         .toList());
   }
 
+  private void initializeMissingCapacity() {
+    var hubsWithoutCapacity =
+        repository.findAll().stream().filter(hub -> hub.getCapacity() < 1).toList();
+    hubsWithoutCapacity.forEach(
+        hub -> {
+          if (hub.getKarts().isEmpty()) {
+            throw new IllegalStateException(
+                "Capacity must be configured for existing hub " + hub.getId());
+          }
+          hub.setCapacity(hub.getKarts().size());
+        });
+    repository.saveAll(hubsWithoutCapacity);
+  }
+
   private Hub hub(String id, String name, String address, Kart... karts) {
-    return new Hub(id, name, address, List.of(karts));
+    return new Hub(id, name, address, karts.length, List.of(karts));
   }
 }

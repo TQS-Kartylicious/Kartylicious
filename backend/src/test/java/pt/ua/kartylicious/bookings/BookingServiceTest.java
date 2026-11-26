@@ -258,7 +258,7 @@ class BookingServiceTest {
 
   @Requirement("KARTY-36")
   @Test
-  void releasesTheDepositWhenPersistenceFails() {
+  void propagatesPersistenceFailureToRollBackTheDeposit() {
     doThrow(new IllegalStateException("database unavailable"))
         .when(bookingRepository)
         .save(any(Booking.class));
@@ -266,7 +266,7 @@ class BookingServiceTest {
     assertThatThrownBy(() -> bookingService.book(requestAt(10, 20), FIRST_USER))
         .isInstanceOf(IllegalStateException.class);
 
-    verify(paymentPort).releaseSecurityDeposit(any(), any());
+    verify(paymentPort).authorizeSecurityDeposit(any(), any());
   }
 
   @Requirement("KARTY-36")
@@ -303,7 +303,7 @@ class BookingServiceTest {
         .when(hubRepository.findById(HUB_ID))
         .thenReturn(
             java.util.Optional.of(
-                new Hub(HUB_ID, "Central Hub", "Main Street", List.of(kart))));
+                new Hub(HUB_ID, "Central Hub", "Main Street", 10, List.of(kart))));
   }
 
   private BookingRequest requestAt(long startMinute, long endMinute) {

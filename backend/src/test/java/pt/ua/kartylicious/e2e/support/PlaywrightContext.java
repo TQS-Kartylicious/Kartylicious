@@ -14,14 +14,14 @@ public class PlaywrightContext {
   private static Browser browser;
   private static Page page;
 
-  @Before("@KARTY-35 or @KARTY-36 or @KARTY-37")
+  @Before("@KARTY-35 or @KARTY-36 or @KARTY-37 or @KARTY-38 or @KARTY-39 or @KARTY-40")
   public void setUp() {
     playwright = Playwright.create();
     browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
     page = browser.newPage();
   }
 
-  @After("@KARTY-35 or @KARTY-36 or @KARTY-37")
+  @After("@KARTY-35 or @KARTY-36 or @KARTY-37 or @KARTY-38 or @KARTY-39 or @KARTY-40")
   public void tearDown() {
     if (page != null) {
       page.close();

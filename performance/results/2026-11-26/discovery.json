@@ -1,0 +1,161 @@
+{
+  "suite": "discovery",
+  "duration_ms": 90036.654588,
+  "metrics": {
+    "hub_list_other_unexpected": {
+      "count": 0,
+      "rate": 0
+    },
+    "data_received": {
+      "count": 45181450,
+      "rate": 501811.73663933243
+    },
+    "hub_list_conflicts": {
+      "count": 0,
+      "rate": 0
+    },
+    "hub_detail_unexpected": {
+      "count": 0,
+      "rate": 0,
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    },
+    "iterations": {
+      "count": 17600,
+      "rate": 195.47594344254668
+    },
+    "hub_list_requests": {
+      "count": 11750,
+      "rate": 130.5024054232911
+    },
+    "hub_list_network_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "hub_detail_network_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "hub_detail_other_unexpected": {
+      "count": 0,
+      "rate": 0
+    },
+    "hub_list_unexpected": {
+      "count": 0,
+      "rate": 0,
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    },
+    "discovery_peak_http_5xx_rate": {
+      "rate": 0,
+      "passes": 0,
+      "fails": 23500,
+      "thresholds": {
+        "rate<0.01": {
+          "ok": true
+        }
+      }
+    },
+    "hub_detail_conflicts": {
+      "count": 0,
+      "rate": 0
+    },
+    "hub_list_successes": {
+      "count": 11750,
+      "rate": 130.5024054232911
+    },
+    "hub_list_http_5xx": {
+      "count": 0,
+      "rate": 0
+    },
+    "iteration_duration": {
+      "p(95)": 259.65483075,
+      "p(99)": 264.0356481899999,
+      "max": 349.529467,
+      "count": 17600,
+      "avg": 255.7604500384101,
+      "min": 251.568678,
+      "med": 255.10036350000001
+    },
+    "data_sent": {
+      "count": 17224064,
+      "rate": 191300.57729061387
+    },
+    "vus_max": {
+      "value": 50,
+      "min": 50,
+      "max": 50
+    },
+    "hub_detail_requests": {
+      "count": 11750,
+      "rate": 130.5024054232911
+    },
+    "hub_list_http_5xx_rate": {
+      "rate": 0,
+      "passes": 0,
+      "fails": 11750
+    },
+    "hub_detail_http_5xx_rate": {
+      "passes": 0,
+      "fails": 11750,
+      "rate": 0
+    },
+    "vus": {
+      "value": 50,
+      "min": 50,
+      "max": 50
+    },
+    "hub_list_auth_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "hub_list_latency_ms": {
+      "max": 14.319417,
+      "count": 11750,
+      "avg": 2.6350697897021296,
+      "min": 0.64597,
+      "med": 2.3339204999999996,
+      "p(95)": 5.152517099999999,
+      "p(99)": 7.161379390000003,
+      "thresholds": {
+        "p(95)<300": {
+          "ok": true
+        }
+      }
+    },
+    "hub_detail_http_5xx": {
+      "count": 0,
+      "rate": 0
+    },
+    "hub_detail_auth_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "hub_detail_latency_ms": {
+      "avg": 2.0700932936170173,
+      "min": 0.536515,
+      "med": 1.700424,
+      "p(95)": 4.578229149999999,
+      "p(99)": 6.488051040000007,
+      "max": 12.711415,
+      "count": 11750,
+      "thresholds": {
+        "p(95)<300": {
+          "ok": true
+        }
+      }
+    },
+    "hub_detail_successes": {
+      "count": 11750,
+      "rate": 130.5024054232911
+    }
+  },
+  "k6_exit_code": 0,
+  "passed": true
+}

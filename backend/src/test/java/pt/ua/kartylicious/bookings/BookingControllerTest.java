@@ -4,6 +4,7 @@ import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
@@ -26,6 +27,7 @@ import pt.ua.kartylicious.registration.UserRole;
 import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -149,6 +151,41 @@ class BookingControllerTest {
         .andExpect(jsonPath("$[0].status").value("ACTIVE"));
 
     verify(bookingService).activeBookings(USER_ID);
+  }
+
+  @Test
+  @Requirement("KARTY-40")
+  void cancellationRequiresAuthenticationAndTheEndUserRole() throws Exception {
+    var id = UUID.randomUUID();
+    var url = "/api/bookings/{bookingId}";
+    var body = "{\"status\":\"CANCELLED\"}";
+
+    mockMvc.perform(patch(url, id).contentType("application/json").content(body))
+        .andExpect(status().isUnauthorized());
+
+    for (var role : List.of("OPERATOR", "MUNICIPAL_WORKER", "ADMIN")) {
+      mockMvc
+          .perform(
+              patch(url, id)
+                  .header("Authorization", "Bearer " + tokenForRole(role))
+                  .contentType("application/json")
+                  .content(body))
+          .andExpect(status().isForbidden());
+    }
+    verifyNoInteractions(bookingService);
+  }
+
+  @Test
+  @Requirement("KARTY-40")
+  void patchCannotSetAnArbitraryBookingStatus() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/bookings/{bookingId}", UUID.randomUUID())
+                .header("Authorization", "Bearer " + tokenForRole("END_USER"))
+                .contentType("application/json")
+                .content("{\"status\":\"COMPLETED\"}"))
+        .andExpect(status().isBadRequest());
+    verifyNoInteractions(bookingService);
   }
 
   private String bookingJson() {

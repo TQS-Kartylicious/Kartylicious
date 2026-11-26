@@ -633,6 +633,33 @@
   box-shadow: 0 0 0 3px rgb(233 40 131 / 13%);
 }
 
+.booking-panel.fault-form {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 12px;
+}
+
+.fault-form select,
+.fault-form textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ead4df;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.fault-form textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.fault-form .active-trip__actions {
+  flex-wrap: wrap;
+}
+
 .booking-confirm {
   min-height: 40px;
   padding: 0 15px;
@@ -692,6 +719,28 @@
   border: 1px solid #b8dfc5;
   border-radius: 6px;
   background: #f2fbf5;
+}
+
+.active-ride__destination {
+  display: grid;
+  gap: 6px;
+  color: #225c38;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.active-ride__destination select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid #b8dfc5;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .active-trips {

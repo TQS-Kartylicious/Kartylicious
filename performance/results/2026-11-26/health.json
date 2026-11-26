@@ -1,0 +1,100 @@
+{
+  "suite": "health",
+  "duration_ms": 60000.148319,
+  "metrics": {
+    "health_conflicts": {
+      "rate": 0,
+      "count": 0
+    },
+    "data_sent": {
+      "rate": 114.9997157226194,
+      "count": 6900
+    },
+    "health_requests": {
+      "rate": 0.9999975280227774,
+      "count": 60,
+      "thresholds": {
+        "count==60": {
+          "ok": true
+        }
+      }
+    },
+    "health_availability": {
+      "rate": 1,
+      "passes": 60,
+      "fails": 0,
+      "thresholds": {
+        "rate>=0.995": {
+          "ok": true
+        }
+      }
+    },
+    "data_received": {
+      "count": 22320,
+      "rate": 371.99908042447316
+    },
+    "health_successes": {
+      "count": 60,
+      "rate": 0.9999975280227774
+    },
+    "health_other_unexpected": {
+      "count": 0,
+      "rate": 0
+    },
+    "iteration_duration": {
+      "max": 5.171624,
+      "count": 60,
+      "avg": 2.391325649999999,
+      "min": 1.386667,
+      "med": 2.461098,
+      "p(95)": 3.13086085,
+      "p(99)": 4.1370749299999945
+    },
+    "vus": {
+      "value": 0,
+      "min": 0,
+      "max": 1
+    },
+    "health_http_5xx_rate": {
+      "fails": 60,
+      "rate": 0,
+      "passes": 0
+    },
+    "health_auth_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "health_network_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "iterations": {
+      "rate": 0.9999975280227774,
+      "count": 60
+    },
+    "health_unexpected": {
+      "count": 0,
+      "rate": 0
+    },
+    "vus_max": {
+      "value": 2,
+      "min": 2,
+      "max": 2
+    },
+    "health_latency_ms": {
+      "med": 2.2040724999999997,
+      "p(95)": 2.8784156499999995,
+      "p(99)": 3.841689529999994,
+      "max": 4.923179,
+      "count": 60,
+      "avg": 2.1440167333333338,
+      "min": 1.232237
+    },
+    "health_http_5xx": {
+      "count": 0,
+      "rate": 0
+    }
+  },
+  "k6_exit_code": 0,
+  "passed": true
+}

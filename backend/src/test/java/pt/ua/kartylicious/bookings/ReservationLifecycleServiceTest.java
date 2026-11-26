@@ -1,8 +1,11 @@
 package pt.ua.kartylicious.bookings;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
@@ -45,6 +48,9 @@ class ReservationLifecycleServiceTest {
             hubRepository,
             paymentPort,
             Clock.fixed(NOW, ZoneOffset.UTC));
+  }
+
+  private void givenReservedKartAtHub() {
     when(hubRepository.lockKart(HUB_ID, KART_ID))
         .thenReturn(
             Optional.of(
@@ -54,6 +60,7 @@ class ReservationLifecycleServiceTest {
   @Test
   @Requirement("KARTY-36")
   void expiresEndedBookingReleasesItsDepositAndKart() {
+    givenReservedKartAtHub();
     var ended = booking(NOW.minusSeconds(600), NOW);
     when(bookingRepository.findActiveByKart(HUB_ID, KART_ID))
         .thenReturn(List.of(ended))
@@ -72,21 +79,52 @@ class ReservationLifecycleServiceTest {
                 ended.endsAt(),
                 BookingStatus.EXPIRED));
     verify(paymentPort).releaseSecurityDeposit(USER_ID, ended.id());
-    verify(hubRepository).releaseKart(HUB_ID, KART_ID);
+    verify(hubRepository).reconcileReservedKart(KART_ID, false);
   }
 
   @Test
   @Requirement("KARTY-36")
   void keepsKartReservedWhenAnotherFutureBookingExists() {
+    givenReservedKartAtHub();
     var ended = booking(NOW.minusSeconds(600), NOW.minusSeconds(1));
     var future = booking(NOW.plusSeconds(600), NOW.plusSeconds(1_200));
     when(bookingRepository.findActiveByKart(HUB_ID, KART_ID))
         .thenReturn(List.of(ended, future))
         .thenReturn(List.of(future));
+    when(bookingRepository.hasUnexpiredReservation(KART_ID, NOW)).thenReturn(true);
 
     assertThat(service.activeByKart(HUB_ID, KART_ID)).containsExactly(future);
+    verify(paymentPort).releaseSecurityDeposit(USER_ID, ended.id());
+    verify(paymentPort, never()).releaseSecurityDeposit(USER_ID, future.id());
+    verify(hubRepository, never()).reconcileReservedKart(KART_ID, false);
+    verify(hubRepository).reconcileReservedKart(KART_ID, true);
+  }
 
-    verify(hubRepository, never()).releaseKart(HUB_ID, KART_ID);
+  @Test
+  @Requirement("KARTY-40")
+  void cancellationRejectsAnotherUsersReservation() {
+    var active = booking(NOW.minusSeconds(1), NOW.plusSeconds(600));
+    when(bookingRepository.findById(active.id())).thenReturn(Optional.of(active));
+
+    assertThatThrownBy(() -> service.cancel(active.id(), UUID.randomUUID()))
+        .isInstanceOf(BookingAccessDeniedException.class);
+
+    verifyNoInteractions(hubRepository, paymentPort);
+  }
+
+  @Test
+  @Requirement("KARTY-40")
+  void cancellationRejectsReservationAtItsExpiryBoundary() {
+    var expired = booking(NOW.minusSeconds(600), NOW);
+    when(bookingRepository.findById(expired.id())).thenReturn(Optional.of(expired));
+    when(hubRepository.lockKartById(KART_ID))
+        .thenReturn(Optional.of(new Kart(KART_ID, "Kart 1", 80, KartStatus.RESERVED, true, false)));
+
+    assertThatThrownBy(() -> service.cancel(expired.id(), USER_ID))
+        .isInstanceOf(ReservationNotCancellableException.class);
+
+    verify(bookingRepository, never()).save(any());
+    verifyNoInteractions(paymentPort);
   }
 
   private Booking booking(Instant startsAt, Instant endsAt) {

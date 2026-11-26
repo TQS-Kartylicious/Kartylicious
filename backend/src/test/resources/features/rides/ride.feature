@@ -45,6 +45,8 @@ Feature: Start an immediate mini-kart ride
       When I reserve the "K-301" mini-kart for an immediate ride
       And I click "Start Ride" for my reserved mini-kart
       And I select the "Central Square" municipal hub
-      When I attempt to start a ride on the "K-101" mini-kart
-      Then the ride is not started
-      And I see the ride error "Only one active trip is allowed per user."
+      Then the Start Ride action for the "K-101" mini-kart is disabled
+      And the active ride is still shown for the "K-301" mini-kart
+      When I request to start another ride on the "K-101" mini-kart through the API
+      Then the API rejects the second ride with "Only one active trip is allowed per user."
+      And the active ride is still shown for the "K-301" mini-kart

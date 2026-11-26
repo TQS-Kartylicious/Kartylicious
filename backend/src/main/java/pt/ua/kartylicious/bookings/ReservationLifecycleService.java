@@ -43,7 +43,11 @@ public class ReservationLifecycleService {
         .filter(booking -> !booking.endsAt().isAfter(now))
         .map(booking -> new KartLocation(booking.hubId(), booking.kartId()))
         .distinct()
-        .forEach(location -> activeByKart(location.hubId(), location.kartId()));
+        .forEach(
+            location -> {
+              hubRepository.lockKartById(location.kartId()).orElseThrow(KartUnavailableException::new);
+              expireEndedBookings(location.hubId(), location.kartId(), now);
+            });
     return bookingRepository.findActiveByUser(userId);
   }
 
@@ -51,20 +55,68 @@ public class ReservationLifecycleService {
     bookingRepository.save(withStatus(booking, BookingStatus.COMPLETED));
   }
 
-  private void expireEndedBookings(String hubId, String kartId, Instant now) {
-    var activeBookings = bookingRepository.findActiveByKart(hubId, kartId);
-    var endedBookings =
-        activeBookings.stream().filter(booking -> !booking.endsAt().isAfter(now)).toList();
+  @Transactional
+  public void expireKart(String kartId) {
+    hubRepository.lockKartById(kartId).orElseThrow(KartUnavailableException::new);
+    var now = clock.instant();
+    expireBookings(kartId, bookingRepository.findExpiredByKart(kartId, now), now);
+  }
 
+  /** The caller holds the kart lock. */
+  public boolean hasUnexpiredReservationAtHub(String hubId, String kartId, Instant now) {
+    return bookingRepository.findActiveByKart(hubId, kartId).stream()
+        .anyMatch(booking -> booking.endsAt().isAfter(now));
+  }
+
+  /** The caller holds the kart lock. */
+  public List<Booking> unexpiredAtOtherHubs(String hubId, String kartId, Instant now) {
+    return bookingRepository.findUnexpiredAtOtherHubs(hubId, kartId, now);
+  }
+
+  @Transactional
+  public Booking cancel(UUID bookingId, UUID userId) {
+    var booking = findOwnedBooking(bookingId, userId);
+    // Ride start and booking creation also serialize changes on the kart row.
+    hubRepository.lockKartById(booking.kartId()).orElseThrow(KartUnavailableException::new);
+    // Read a fresh snapshot after acquiring the kart lock.
+    var current = findOwnedBooking(bookingId, userId);
+    var now = clock.instant();
+    if (current.status() != BookingStatus.ACTIVE || !current.endsAt().isAfter(now)) {
+      throw new ReservationNotCancellableException();
+    }
+
+    var cancelled = bookingRepository.save(withStatus(current, BookingStatus.CANCELLED));
+    hubRepository.reconcileReservedKart(
+        current.kartId(),
+        bookingRepository.hasOtherUnexpiredReservation(current.kartId(), bookingId, now));
+    paymentPort.releaseSecurityDeposit(current.userId(), current.id());
+    return cancelled;
+  }
+
+  private Booking findOwnedBooking(UUID bookingId, UUID userId) {
+    var booking = bookingRepository.findById(bookingId).orElseThrow(BookingNotFoundException::new);
+    if (!booking.userId().equals(userId)) {
+      throw new BookingAccessDeniedException();
+    }
+    return booking;
+  }
+
+  private void expireEndedBookings(String hubId, String kartId, Instant now) {
+    var endedBookings = bookingRepository.findActiveByKart(hubId, kartId).stream()
+        .filter(booking -> !booking.endsAt().isAfter(now)).toList();
+    expireBookings(kartId, endedBookings, now);
+  }
+
+  private void expireBookings(String kartId, List<Booking> endedBookings, Instant now) {
     endedBookings.forEach(
         booking -> {
           bookingRepository.save(withStatus(booking, BookingStatus.EXPIRED));
           paymentPort.releaseSecurityDeposit(booking.userId(), booking.id());
         });
 
-    if (!endedBookings.isEmpty()
-        && activeBookings.stream().allMatch(booking -> !booking.endsAt().isAfter(now))) {
-      hubRepository.releaseKart(hubId, kartId);
+    if (!endedBookings.isEmpty()) {
+      hubRepository.reconcileReservedKart(
+          kartId, bookingRepository.hasUnexpiredReservation(kartId, now));
     }
   }
 

@@ -30,6 +30,18 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       MAXIMUM_RESERVATION_DURATION_MINUTES: ${MAXIMUM_RESERVATION_DURATION_MINUTES:-60}
+      MAXIMUM_RIDE_DURATION_MINUTES: ${MAXIMUM_RIDE_DURATION_MINUTES:-60}
+      BASE_FARE: ${BASE_FARE:-1.00}
+      PER_MINUTE_RATE: ${PER_MINUTE_RATE:-0.25}
+      OVERTIME_FEE: ${OVERTIME_FEE:-2.00}
+      FLEET_MQTT_ENABLED: ${FLEET_MQTT_ENABLED:-true}
+      FLEET_MQTT_URL: tcp://mqtt:1883
+      SIMULATED_PAYMENT_DECLINE_USER_ID: ${SIMULATED_PAYMENT_DECLINE_USER_ID:-}
+      RESERVATION_EXPIRY_ENABLED: ${RESERVATION_EXPIRY_ENABLED:-true}
+      RESERVATION_EXPIRY_INTERVAL: ${RESERVATION_EXPIRY_INTERVAL:-30s}
+    networks:
+      - default
+      - fleet
     ports:
       - "8080:8080"
 
@@ -39,6 +51,27 @@ services:
       - backend
     ports:
       - "3000:80"
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    volumes:
+      - ./fleet-simulator/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    networks:
+      - fleet
+
+  simulator:
+    build: ./fleet-simulator
+    depends_on:
+      - mqtt
+    environment:
+      FLEET_SIMULATOR_FLEET: ${FLEET_SIMULATOR_FLEET:-}
+      FLEET_SIMULATOR_RATE: ${FLEET_SIMULATOR_RATE:-10}
+    networks:
+      - fleet
+
+networks:
+  fleet:
+    internal: true
 
 volumes:
   pgdata:

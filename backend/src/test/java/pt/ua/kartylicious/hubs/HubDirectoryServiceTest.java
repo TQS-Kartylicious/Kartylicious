@@ -34,6 +34,7 @@ class HubDirectoryServiceTest {
             "hub-1",
             "Riverside Hub",
             "1 River Road",
+            10,
             List.of(
                 new Kart("kart-0", "Yellow kart", 19, KartStatus.LOW_BATTERY, true, false),
                 new Kart("kart-4", "White kart", 80, KartStatus.INACTIVE, true, false),
@@ -58,6 +59,7 @@ class HubDirectoryServiceTest {
             "hub-1",
             "Riverside Hub",
             "1 River Road",
+            10,
             List.of(
                 new Kart("kart-1", "Blue kart", 80, KartStatus.AVAILABLE, true, true),
                 new Kart("kart-2", "Green kart", 80, KartStatus.INACTIVE, false, true),
@@ -65,7 +67,8 @@ class HubDirectoryServiceTest {
                 new Kart("kart-4", "Red kart", 80, KartStatus.RESERVED, true, true),
                 new Kart("kart-5", "White kart", 80, KartStatus.IN_USE, true, true),
                 new Kart("kart-6", "Orange kart", 80, KartStatus.AVAILABLE, false, false),
-                new Kart("kart-7", "Purple kart", 80, KartStatus.INACTIVE, false, false)));
+                new Kart("kart-7", "Purple kart", 80, KartStatus.INACTIVE, false, false),
+                new Kart("kart-8", "Retired kart", 80, KartStatus.RETIRED, false, true)));
     when(hubRepository.findById("hub-1")).thenReturn(Optional.of(hub));
 
     var result = service.getHub("hub-1");
@@ -73,12 +76,15 @@ class HubDirectoryServiceTest {
     assertThat(result.karts()).extracting(HubDirectoryService.KartDetails::status)
         .containsExactly(
             "In Maintenance",
-            "In Maintenance",
+            "Inactive",
             "In Maintenance",
             "In Maintenance",
             "In Use",
             "Inactive",
-            "Inactive");
+            "Inactive",
+            "Retired");
+    assertThat(result.karts()).extracting(HubDirectoryService.KartDetails::selectable)
+        .containsOnly(false);
   }
 
   @Requirement("KARTY-35")
@@ -163,6 +169,6 @@ class HubDirectoryServiceTest {
   }
 
   private Hub hubWithKart(Kart kart) {
-    return new Hub("hub-1", "Riverside Hub", "1 River Road", List.of(kart));
+    return new Hub("hub-1", "Riverside Hub", "1 River Road", 10, List.of(kart));
   }
 }

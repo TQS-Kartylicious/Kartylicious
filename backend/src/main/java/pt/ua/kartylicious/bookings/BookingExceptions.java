@@ -23,3 +23,21 @@ class DepositAuthorizationException extends BookingException {
     super("Security deposit authorization failed.");
   }
 }
+
+class BookingNotFoundException extends BookingException {
+  BookingNotFoundException() {
+    super("Reservation not found.");
+  }
+}
+
+class BookingAccessDeniedException extends BookingException {
+  BookingAccessDeniedException() {
+    super("Access denied");
+  }
+}
+
+class ReservationNotCancellableException extends BookingException {
+  ReservationNotCancellableException() {
+    super("Only an active, unexpired reservation can be cancelled.");
+  }
+}
