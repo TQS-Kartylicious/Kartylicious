@@ -16,6 +16,7 @@ class JpaHubEntity {
   @Id private String id;
   private String name;
   private String address;
+  private Integer capacity;
 
   @OneToMany(mappedBy = "hub", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
   private List<JpaKartEntity> karts = new ArrayList<>();
@@ -26,6 +27,7 @@ class JpaHubEntity {
     this.id = hub.id();
     this.name = hub.name();
     this.address = hub.address();
+    this.capacity = hub.capacity();
     this.karts =
         new ArrayList<>(hub.karts().stream().map(kart -> new JpaKartEntity(kart, this)).toList());
   }
@@ -42,11 +44,20 @@ class JpaHubEntity {
     return address;
   }
 
+  int getCapacity() {
+    return capacity == null ? 0 : capacity;
+  }
+
+  void setCapacity(int capacity) {
+    this.capacity = capacity;
+  }
+
   List<JpaKartEntity> getKarts() {
     return karts;
   }
 
   Hub toHub() {
-    return new Hub(id, name, address, karts.stream().map(JpaKartEntity::toKart).toList());
+    return new Hub(
+        id, name, address, getCapacity(), karts.stream().map(JpaKartEntity::toKart).toList());
   }
 }

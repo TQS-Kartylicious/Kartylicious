@@ -1,0 +1,190 @@
+{
+  "suite": "booking",
+  "duration_ms": 90217.196709,
+  "metrics": {
+    "cleanup_successes": {
+      "count": 10850,
+      "rate": 120.26531964850568
+    },
+    "cleanup_conflicts": {
+      "count": 0,
+      "rate": 0
+    },
+    "cleanup_latency_ms": {
+      "avg": 4.2278688050691375,
+      "min": 2.789557,
+      "med": 3.9760600000000004,
+      "p(95)": 5.46511495,
+      "p(99)": 7.176499040000008,
+      "max": 12.889724,
+      "count": 10850
+    },
+    "iteration_duration": {
+      "med": 260.767205,
+      "p(95)": 265.7375139,
+      "p(99)": 290.5099878899999,
+      "max": 497.311697,
+      "count": 17200,
+      "avg": 261.97168456226734,
+      "min": 252.529262
+    },
+    "booking_success_latency_ms": {
+      "med": 6.1299725,
+      "p(95)": 8.308936099999995,
+      "p(99)": 9.916490730000007,
+      "max": 25.656595,
+      "count": 10850,
+      "avg": 6.28614549585252,
+      "min": 3.762189,
+      "thresholds": {
+        "p(95)<500": {
+          "ok": true
+        }
+      }
+    },
+    "cleanup_http_5xx": {
+      "count": 0,
+      "rate": 0
+    },
+    "cleanup_auth_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "booking_requests": {
+      "count": 11450,
+      "rate": 126.91593640326175
+    },
+    "cleanup_other_unexpected": {
+      "count": 0,
+      "rate": 0
+    },
+    "cleanup_http_5xx_rate": {
+      "rate": 0,
+      "passes": 0,
+      "fails": 10850
+    },
+    "data_sent": {
+      "count": 20344336,
+      "rate": 225503.96977664527
+    },
+    "booking_peak_http_5xx_rate": {
+      "rate": 0,
+      "passes": 0,
+      "fails": 21700,
+      "thresholds": {
+        "rate<0.01": {
+          "ok": true
+        }
+      }
+    },
+    "booking_other_unexpected": {
+      "count": 0,
+      "rate": 0
+    },
+    "booking_unexpected": {
+      "rate": 0,
+      "count": 0,
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    },
+    "vus": {
+      "min": 50,
+      "max": 50,
+      "value": 50
+    },
+    "booking_http_5xx": {
+      "rate": 0,
+      "count": 0
+    },
+    "booking_latency_ms": {
+      "med": 6.1858825,
+      "p(95)": 9.841525399999998,
+      "p(99)": 40.92238556000005,
+      "max": 62.733871,
+      "count": 11450,
+      "avg": 7.217255583668101,
+      "min": 2.500515,
+      "thresholds": {
+        "p(95)<500": {
+          "ok": true
+        }
+      }
+    },
+    "booking_http_5xx_rate": {
+      "rate": 0,
+      "passes": 0,
+      "fails": 10850,
+      "thresholds": {
+        "rate<0.01": {
+          "ok": true
+        }
+      }
+    },
+    "data_received": {
+      "rate": 183704.79913555834,
+      "count": 16573332
+    },
+    "iterations": {
+      "count": 17200,
+      "rate": 190.6510136363408
+    },
+    "vus_max": {
+      "max": 50,
+      "value": 50,
+      "min": 50
+    },
+    "booking_success_rate": {
+      "fails": 600,
+      "rate": 0.9475982532751092,
+      "passes": 10850,
+      "thresholds": {
+        "rate>0.90": {
+          "ok": true
+        }
+      }
+    },
+    "booking_auth_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "cleanup_unexpected": {
+      "count": 0,
+      "rate": 0,
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    },
+    "booking_network_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "booking_successes": {
+      "count": 10850,
+      "rate": 120.26531964850568
+    },
+    "cleanup_requests": {
+      "count": 10850,
+      "rate": 120.26531964850568
+    },
+    "booking_conflicts": {
+      "count": 600,
+      "rate": 6.650616754756074,
+      "thresholds": {
+        "count>0": {
+          "ok": true
+        }
+      }
+    },
+    "cleanup_network_failures": {
+      "count": 0,
+      "rate": 0
+    }
+  },
+  "k6_exit_code": 0,
+  "passed": true
+}

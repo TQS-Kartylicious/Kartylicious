@@ -1,4 +1,4 @@
-@KARTY-27
+@KARTY-27 @BR12
 Feature: End-user registration
   As an End User
   I want to create a personal account

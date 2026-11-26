@@ -1,0 +1,24 @@
+# Use only with a disposable database. The browser fixtures supply their own observations.
+services:
+  db:
+    environment:
+      POSTGRES_DB: kartylicious_e2e
+      POSTGRES_USER: kartylicious_e2e
+      POSTGRES_PASSWORD: kartylicious_e2e_only
+    ports: !override
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kartylicious_e2e", "-d", "kartylicious_e2e"]
+    volumes:
+      - ./e2e-fixture-init.sql:/docker-entrypoint-initdb.d/00-e2e-fixture.sql:ro
+  backend:
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/kartylicious_e2e
+      SPRING_DATASOURCE_USERNAME: kartylicious_e2e
+      SPRING_DATASOURCE_PASSWORD: kartylicious_e2e_only
+      FLEET_MQTT_ENABLED: "false"
+      RESERVATION_EXPIRY_ENABLED: "false"
+  mqtt:
+    profiles: [live-telemetry]
+  simulator:
+    profiles: [live-telemetry]

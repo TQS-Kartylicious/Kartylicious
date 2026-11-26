@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import com.jayway.jsonpath.JsonPath;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,6 +66,8 @@ class AdminPersistenceIT {
 
   @AfterEach
   void removeTestAccounts() {
+    jdbcTemplate.update("delete from rides");
+    jdbcTemplate.update("delete from bookings");
     jdbcTemplate.update("delete from user_accounts where email <> ?", ADMIN_EMAIL);
   }
 
@@ -230,6 +234,63 @@ class AdminPersistenceIT {
                 "select count(*) from user_accounts where role = 'ADMIN' and active",
                 Integer.class))
         .isEqualTo(1);
+  }
+
+  @Requirement("KARTY-76")
+  @Test
+  void userWithActiveReservationOrRideCannotBeDeactivated() throws Exception {
+    var suffix = uniqueSuffix();
+    var userId = createEndUser("rider-" + suffix, "rider-" + suffix + "@example.com");
+    var now = Instant.now();
+    jdbcTemplate.update(
+        "insert into bookings (id, user_id, hub_id, kart_id, starts_at, ends_at, status) "
+            + "values (?, ?, ?, ?, ?, ?, 'ACTIVE')",
+        UUID.randomUUID(),
+        userId,
+        "central-square",
+        "K-101",
+        Timestamp.from(now.plusSeconds(60)),
+        Timestamp.from(now.plusSeconds(1_200)));
+
+    deactivate(userId).andExpect(status().isConflict());
+
+    jdbcTemplate.update("delete from bookings where user_id = ?", userId);
+    jdbcTemplate.update(
+        "insert into rides (id, user_id, hub_id, kart_id, started_at, status) "
+            + "values (?, ?, ?, ?, ?, 'ACTIVE')",
+        UUID.randomUUID(),
+        userId,
+        "central-square",
+        "K-101",
+        Timestamp.from(now));
+
+    deactivate(userId).andExpect(status().isConflict());
+  }
+
+  private org.springframework.test.web.servlet.ResultActions deactivate(UUID userId)
+      throws Exception {
+    return mockMvc.perform(
+        patch("/api/admin/users/{id}/status", userId)
+            .header("Authorization", bearer(adminToken))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"active\":false}"));
+  }
+
+  private UUID createEndUser(String username, String email) throws Exception {
+    var response =
+        mockMvc
+            .perform(
+                post("/api/registration")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"username":"%s","email":"%s","password":"%s"}
+                        """
+                            .formatted(username, email, STAFF_PASSWORD)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return UUID.fromString(
+        JsonPath.read(response.getResponse().getContentAsString(), "$.id").toString());
   }
 
   private String createStaff(String username, String email, String role) throws Exception {

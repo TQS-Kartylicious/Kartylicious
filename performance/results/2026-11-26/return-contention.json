@@ -1,0 +1,130 @@
+{
+  "suite": "return-contention",
+  "duration_ms": 3056.786534,
+  "metrics": {
+    "burst_unexpected": {
+      "count": 0,
+      "rate": 0,
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    },
+    "burst_other_unexpected": {
+      "count": 0,
+      "rate": 0
+    },
+    "burst_requests": {
+      "count": 20,
+      "rate": 6.542818668410164,
+      "thresholds": {
+        "count==20": {
+          "ok": true
+        }
+      }
+    },
+    "dispatch_offset_ms": {
+      "p(95)": 0,
+      "p(99)": 0,
+      "max": 0,
+      "count": 20,
+      "avg": 0,
+      "min": 0,
+      "med": 0,
+      "thresholds": {
+        "min>=0": {
+          "ok": true
+        },
+        "max<250": {
+          "ok": true
+        }
+      }
+    },
+    "burst_auth_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "iterations": {
+      "rate": 6.542818668410164,
+      "count": 20
+    },
+    "burst_http_5xx_rate": {
+      "rate": 0,
+      "passes": 0,
+      "fails": 1
+    },
+    "burst_successes": {
+      "rate": 0.3271409334205082,
+      "count": 1,
+      "thresholds": {
+        "count==1": {
+          "ok": true
+        }
+      }
+    },
+    "data_received": {
+      "count": 6278,
+      "rate": 2053.7907800139506
+    },
+    "burst_conflicts": {
+      "count": 19,
+      "rate": 6.215677734989655,
+      "thresholds": {
+        "count==19": {
+          "ok": true
+        }
+      }
+    },
+    "vus_max": {
+      "min": 20,
+      "max": 20,
+      "value": 20
+    },
+    "burst_latency_ms": {
+      "avg": 43.02013605,
+      "min": 29.32,
+      "med": 43.908572,
+      "p(95)": 53.93614545,
+      "p(99)": 54.877001889999995,
+      "max": 55.112216,
+      "count": 20
+    },
+    "iteration_duration": {
+      "med": 3044.109597,
+      "p(95)": 3054.2407061,
+      "p(99)": 3055.17055242,
+      "max": 3055.403014,
+      "count": 20,
+      "avg": 3043.4341366500003,
+      "min": 3031.744263
+    },
+    "data_sent": {
+      "count": 11311,
+      "rate": 3700.291097919368
+    },
+    "burst_network_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "vus": {
+      "value": 20,
+      "min": 20,
+      "max": 20
+    },
+    "burst_http_5xx": {
+      "count": 0,
+      "rate": 0
+    }
+  },
+  "k6_exit_code": 0,
+  "passed": true,
+  "postgres_read_only": {
+    "capacity": 2,
+    "occupied": 2,
+    "completed_at_destination": 1,
+    "active_uncharged": 19,
+    "settlement_count": 1,
+    "correct_settlement": 1
+  }
+}

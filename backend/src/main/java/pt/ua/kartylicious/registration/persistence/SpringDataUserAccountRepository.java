@@ -1,12 +1,12 @@
 package pt.ua.kartylicious.registration.persistence;
 
-import java.util.UUID;
+import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
-import jakarta.persistence.LockModeType;
-import java.util.List;
 
 interface SpringDataUserAccountRepository extends JpaRepository<JpaUserAccountEntity, UUID> {
 
@@ -15,6 +15,10 @@ interface SpringDataUserAccountRepository extends JpaRepository<JpaUserAccountEn
   boolean existsByUsername(String username);
 
   Optional<JpaUserAccountEntity> findByEmail(String email);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select u from JpaUserAccountEntity u where u.id = :id")
+  Optional<JpaUserAccountEntity> lockById(UUID id);
 
   List<JpaUserAccountEntity> findAllByOrderByUsernameAsc();
 

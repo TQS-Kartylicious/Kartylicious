@@ -1,4 +1,4 @@
-@KARTY-35 
+@KARTY-35 @BR1
 Feature: Discover mini-karts by municipal hub
   As an End User
   I want to browse municipal hubs and view available mini-karts with their battery levels

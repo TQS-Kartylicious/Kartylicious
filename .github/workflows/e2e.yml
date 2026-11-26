@@ -11,6 +11,11 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      COMPOSE_FILE: docker-compose.yml:docker-compose.fixtures.yml
+      E2E_DB_URL: jdbc:postgresql://127.0.0.1:5432/kartylicious_e2e
+      E2E_DB_USER: kartylicious_e2e
+      E2E_DB_PASSWORD: kartylicious_e2e_only
 
     steps:
       - uses: actions/checkout@v4
@@ -39,8 +44,13 @@ jobs:
           docker compose logs
           exit 1
 
-      - name: Install browser system dependencies
-        run: npx --yes playwright install-deps chromium
+      - name: Install Playwright Chromium and system dependencies
+        working-directory: backend
+        run: >
+          ./mvnw -B exec:java
+          -Dexec.mainClass=com.microsoft.playwright.CLI
+          -Dexec.classpathScope=test
+          -Dexec.args="install --with-deps chromium"
 
       - name: Run e2e tests
         working-directory: backend

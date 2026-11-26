@@ -31,7 +31,7 @@ public class RegistrationSteps {
   private String existingUsername;
   private final AtomicInteger registrationRequests = new AtomicInteger();
 
-  @Before
+  @Before("@KARTY-27")
   public void startBrowser() {
     playwright = Playwright.create();
     browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
@@ -44,7 +44,7 @@ public class RegistrationSteps {
         });
   }
 
-  @After
+  @After("@KARTY-27")
   public void closeBrowser() {
     if (page != null) {
       page.close();

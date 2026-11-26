@@ -1,14 +1,21 @@
 package pt.ua.kartylicious.rides;
 
-import java.time.Instant;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -17,11 +24,6 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import app.getxray.xray.junit.customjunitxml.annotations.Requirement;
 import pt.ua.kartylicious.auth.JwtConfiguration;
 import pt.ua.kartylicious.auth.SecurityConfiguration;
 import pt.ua.kartylicious.registration.UserAccount;
@@ -42,6 +44,15 @@ class RideControllerTest {
 
   @MockitoBean private RideService rideService;
   @MockitoBean private UserAccountRepository userAccountRepository;
+
+  @Test
+  @Requirement("KARTY-38")
+  void activeRideRequiresAnAuthenticatedEndUser() throws Exception {
+    mockMvc.perform(get("/api/rides/active")).andExpect(status().isUnauthorized());
+    mockMvc.perform(
+            get("/api/rides/active").header("Authorization", "Bearer " + tokenForRole("OPERATOR")))
+        .andExpect(status().isForbidden());
+  }
 
   @Test
   @Requirement("KARTY-37")
@@ -138,6 +149,84 @@ class RideControllerTest {
                 .header("Authorization", "Bearer " + tokenForRole("OPERATOR"))
                 .contentType("application/json")
                 .content(rideJson()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @Requirement("KARTY-38")
+  void endUserCanCompleteTheirRideAtAnAuthorizedHub() throws Exception {
+    var endedAt = Instant.parse("2099-01-01T10:10:00Z");
+    when(rideService.end(eq(RIDE_ID), any(RideCompletionRequest.class), eq(USER_ID)))
+        .thenReturn(
+            new RideCompletionResponse(
+                RIDE_ID,
+                "hub-2",
+                endedAt,
+                "COMPLETED",
+                "AVAILABLE",
+                new BigDecimal("7.00"),
+                "Ride completed."));
+
+    mockMvc
+        .perform(
+            patch("/api/rides/{rideId}", RIDE_ID)
+                .header("Authorization", "Bearer " + tokenForRole("END_USER"))
+                .contentType("application/json")
+                .content("{\"hubId\":\"hub-2\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(RIDE_ID.toString()))
+        .andExpect(jsonPath("$.endHubId").value("hub-2"))
+        .andExpect(jsonPath("$.status").value("COMPLETED"))
+        .andExpect(jsonPath("$.kartStatus").value("AVAILABLE"))
+        .andExpect(jsonPath("$.finalCharge").value(7.00))
+        .andExpect(jsonPath("$.message").value("Ride completed."));
+
+    verify(rideService).end(RIDE_ID, new RideCompletionRequest("hub-2"), USER_ID);
+  }
+
+  @Test
+  @Requirement("KARTY-38")
+  void returnsSpecifiedMessagesForInvalidRideDestinations() throws Exception {
+    when(rideService.end(eq(RIDE_ID), any(RideCompletionRequest.class), eq(USER_ID)))
+        .thenThrow(new UnauthorizedHubException())
+        .thenThrow(new HubFullException());
+
+    var token = tokenForRole("END_USER");
+    mockMvc
+        .perform(
+            patch("/api/rides/{rideId}", RIDE_ID)
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content("{\"hubId\":\"hub-2\"}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message").value("Park at an authorized hub"));
+
+    mockMvc
+        .perform(
+            patch("/api/rides/{rideId}", RIDE_ID)
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content("{\"hubId\":\"hub-2\"}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message").value("The hub is full"));
+  }
+
+  @Test
+  @Requirement("KARTY-38")
+  void rideCompletionRequiresAuthenticatedEndUserRole() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/rides/{rideId}", RIDE_ID)
+                .contentType("application/json")
+                .content("{\"hubId\":\"hub-2\"}"))
+        .andExpect(status().isUnauthorized());
+
+    mockMvc
+        .perform(
+            patch("/api/rides/{rideId}", RIDE_ID)
+                .header("Authorization", "Bearer " + tokenForRole("OPERATOR"))
+                .contentType("application/json")
+                .content("{\"hubId\":\"hub-2\"}"))
         .andExpect(status().isForbidden());
   }
 

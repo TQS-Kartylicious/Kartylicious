@@ -1,4 +1,4 @@
-@KARTY-34
+@KARTY-34 @BR12
 Feature: End User authentication
   As a Registered User
   I want to log into and out of my Kartylicious account securely

@@ -25,4 +25,22 @@ public class BookingExceptionHandler {
   public Map<String, String> deposit(DepositAuthorizationException exception) {
     return Map.of("message", exception.getMessage());
   }
+
+  @ExceptionHandler(BookingNotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public Map<String, String> notFound(BookingNotFoundException exception) {
+    return Map.of("message", exception.getMessage());
+  }
+
+  @ExceptionHandler(BookingAccessDeniedException.class)
+  @ResponseStatus(HttpStatus.FORBIDDEN)
+  public Map<String, String> accessDenied(BookingAccessDeniedException exception) {
+    return Map.of("message", exception.getMessage());
+  }
+
+  @ExceptionHandler(ReservationNotCancellableException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public Map<String, String> notCancellable(ReservationNotCancellableException exception) {
+    return Map.of("message", exception.getMessage());
+  }
 }

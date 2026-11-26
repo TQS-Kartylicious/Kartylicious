@@ -1,9 +1,9 @@
 package pt.ua.kartylicious.registration.persistence;
 
-import org.springframework.stereotype.Repository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.List;
+import org.springframework.stereotype.Repository;
 import pt.ua.kartylicious.registration.UserAccount;
 import pt.ua.kartylicious.registration.port.UserAccountRepository;
 
@@ -34,6 +34,11 @@ public class JpaUserAccountRepositoryAdapter implements UserAccountRepository {
   @Override
   public Optional<UserAccount> findById(UUID id) {
     return repository.findById(id).map(this::toAccount);
+  }
+
+  @Override
+  public Optional<UserAccount> lockById(UUID id) {
+    return repository.lockById(id).map(this::toAccount);
   }
 
   @Override
