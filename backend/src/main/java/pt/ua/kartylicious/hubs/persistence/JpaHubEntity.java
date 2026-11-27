@@ -52,6 +52,12 @@ class JpaHubEntity {
     this.capacity = capacity;
   }
 
+  void updateDetails(Hub hub) {
+    name = hub.name();
+    address = hub.address();
+    capacity = hub.capacity();
+  }
+
   List<JpaKartEntity> getKarts() {
     return karts;
   }

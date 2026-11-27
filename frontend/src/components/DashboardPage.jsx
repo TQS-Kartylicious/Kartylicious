@@ -1,6 +1,7 @@
 import Brand from './Brand.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
 import HubDirectoryPage from './HubDirectoryPage.jsx'
+import OperatorFleetManagement from './OperatorFleetManagement.jsx'
 import OperatorMaintenance from './OperatorMaintenance.jsx'
 
 function DashboardPage({ username }) {
@@ -50,7 +51,12 @@ function DashboardPage({ username }) {
         ) : (
           <section className="active-trips" aria-labelledby="staff-dashboard-title">
             <h2 id="staff-dashboard-title">{staffRoleName(user?.role)} dashboard</h2>
-            {user?.role === 'OPERATOR' ? <OperatorMaintenance /> : (
+            {user?.role === 'OPERATOR' ? (
+              <>
+                <OperatorFleetManagement />
+                <OperatorMaintenance />
+              </>
+            ) : (
               <p className="hub-message">
                 This account does not use the end-user rental dashboard.
               </p>

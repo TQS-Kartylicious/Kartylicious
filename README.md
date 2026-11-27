@@ -12,7 +12,7 @@ docker compose up -d --build
 The simulator publishes 10 observations per second across its configured fleet.
 It defaults to all 11 seeded karts with their seeded battery levels, hubs, and
 lock states. The seeded in-use kart starts unlocked and outside the hubs. Set
-`FLEET_SIMULATOR_FLEET` to a JSON map of seeded kart IDs to initial battery levels,
+`FLEET_SIMULATOR_FLEET` to a JSON map of kart IDs to initial battery levels,
 and `FLEET_SIMULATOR_RATE` to change the total readings per second. MQTT is
 available only to services on the internal Compose fleet network.
 
@@ -35,6 +35,13 @@ The same control accepts `--hub outside`, `--battery 19`, `--locked false`, and
 `--critical-fault true`. Use a fresh disposable environment for critical fault demos.
 Ride start and completion send simulated unlock/lock commands after commit.
 These commands model simulator state; they provide no hardware confirmation.
+
+To demonstrate activation of a newly registered kart, register it in the operator
+dashboard first. Include its identifier in `FLEET_SIMULATOR_FLEET` when starting
+or recreating the simulator, for example `{"K-NEW":0}`. Supply an observation
+with `docker compose exec simulator python simulator.py set K-NEW --battery 20`.
+After the dashboard reloads, check that the kart is still inactive at 20% and
+activate it as an operator.
 
 For a local SLO2 check, expose `health,metrics` via
 `MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE` on the backend **only in an isolated

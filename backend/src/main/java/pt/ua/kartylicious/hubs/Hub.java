@@ -8,9 +8,16 @@ public record Hub(String id, String name, String address, int capacity, List<Kar
     if (capacity < 1) {
       throw new IllegalArgumentException("Hub capacity must be positive.");
     }
-    var parkedKarts = karts.stream().filter(kart -> kart.status() != KartStatus.IN_USE).count();
-    if (capacity < parkedKarts) {
+    if (capacity < occupancy(karts)) {
       throw new IllegalArgumentException("Hub capacity cannot be below current occupancy.");
     }
+  }
+
+  public long occupancy() {
+    return occupancy(karts);
+  }
+
+  private static long occupancy(List<Kart> karts) {
+    return karts.stream().filter(kart -> kart.status() != KartStatus.IN_USE).count();
   }
 }

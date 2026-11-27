@@ -138,6 +138,11 @@ class JpaKartEntity {
     this.status = status;
   }
 
+  void updateAvailability(boolean active, KartStatus status) {
+    this.active = active;
+    this.status = status;
+  }
+
   void setHub(JpaHubEntity hub) {
     this.hub = hub;
   }

@@ -167,11 +167,7 @@ public class RideService {
       throw new UnauthorizedHubException();
     }
 
-    var occupiedSpaces =
-        destinationHub.karts().stream()
-            .filter(parkedKart -> parkedKart.status() != KartStatus.IN_USE)
-            .count();
-    if (occupiedSpaces >= destinationHub.capacity()) {
+    if (destinationHub.occupancy() >= destinationHub.capacity()) {
       throw new HubFullException();
     }
 

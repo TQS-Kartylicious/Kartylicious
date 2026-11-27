@@ -610,7 +610,8 @@
   text-transform: uppercase;
 }
 
-.booking-panel input {
+.booking-panel input,
+.fleet-management select {
   width: 100%;
   min-height: 40px;
   padding: 0 10px;
@@ -771,6 +772,26 @@
   border-radius: 4px;
   color: var(--ink);
   font-size: 11px;
+}
+
+.fleet-management {
+  margin-bottom: 24px;
+}
+
+.fleet-management__hub {
+  margin-top: 18px;
+}
+
+.fleet-management__hub h4 {
+  margin-bottom: 4px;
+}
+
+.fleet-management__hub ul {
+  margin-top: 8px;
+}
+
+.fleet-management__hub li {
+  flex-wrap: wrap;
 }
 
 .active-ride h3 {

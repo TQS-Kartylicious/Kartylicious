@@ -1,5 +1,6 @@
 package pt.ua.kartylicious.hubs.persistence;
 
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
@@ -13,9 +14,11 @@ import pt.ua.kartylicious.hubs.port.HubRepository;
 @Repository
 public class JpaHubRepositoryAdapter implements HubRepository {
   private final SpringDataHubRepository repository;
+  private final EntityManager entities;
 
-  public JpaHubRepositoryAdapter(SpringDataHubRepository repository) {
+  public JpaHubRepositoryAdapter(SpringDataHubRepository repository, EntityManager entities) {
     this.repository = repository;
+    this.entities = entities;
   }
 
   @Override
@@ -40,6 +43,27 @@ public class JpaHubRepositoryAdapter implements HubRepository {
   }
 
   @Override
+  public void insertHub(Hub hub) {
+    entities.persist(new JpaHubEntity(hub));
+  }
+
+  @Override
+  public void updateHub(Hub hub) {
+    entities.find(JpaHubEntity.class, hub.id()).updateDetails(hub);
+  }
+
+  @Override
+  public boolean kartExists(String kartId) {
+    return entities.find(JpaKartEntity.class, kartId) != null;
+  }
+
+  @Override
+  public void insertKart(String hubId, Kart kart) {
+    entities.persist(new JpaKartEntity(kart, entities.getReference(JpaHubEntity.class, hubId)));
+    entities.flush();
+  }
+
+  @Override
   @Transactional
   public Optional<Kart> lockKart(String hubId, String kartId) {
     return repository.lockKart(hubId, kartId).map(JpaKartEntity::toKart);
@@ -49,6 +73,11 @@ public class JpaHubRepositoryAdapter implements HubRepository {
   @Transactional
   public Optional<Kart> lockKartById(String kartId) {
     return repository.lockKartById(kartId).map(JpaKartEntity::toKart);
+  }
+
+  @Override
+  public void updateKartAvailability(String kartId, boolean active, KartStatus status) {
+    entities.find(JpaKartEntity.class, kartId).updateAvailability(active, status);
   }
 
   @Override

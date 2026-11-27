@@ -16,9 +16,22 @@ public interface HubRepository {
 
   Optional<Hub> lockHub(String hubId);
 
+  void insertHub(Hub hub);
+
+  /** The caller holds the hub lock. */
+  void updateHub(Hub hub);
+
+  boolean kartExists(String kartId);
+
+  /** The caller holds the hub lock. */
+  void insertKart(String hubId, Kart kart);
+
   Optional<Kart> lockKart(String hubId, String kartId);
 
   Optional<Kart> lockKartById(String kartId);
+
+  /** The caller holds the kart lock. */
+  void updateKartAvailability(String kartId, boolean active, KartStatus status);
 
   boolean reserveKart(String hubId, String kartId);
 
