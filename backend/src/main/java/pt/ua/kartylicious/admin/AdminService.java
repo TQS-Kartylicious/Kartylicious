@@ -84,7 +84,7 @@ public class AdminService {
   public AdminUserResponse deactivate(UUID id) {
     repository.lockActiveAdmins();
     var target =
-        repository.findById(id).orElseThrow(AdminExceptions.UserNotFoundException::new);
+        repository.lockById(id).orElseThrow(AdminExceptions.UserNotFoundException::new);
     if (!target.active()) {
       return toResponse(target);
     }

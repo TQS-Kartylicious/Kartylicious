@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Route;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.microsoft.playwright.options.AriaRole;
 
@@ -94,6 +95,53 @@ public class BookingSteps {
     PlaywrightAssertions.assertThat(
             activeTrips.getByText("Reserved", new Locator.GetByTextOptions().setExact(true)))
         .isVisible();
+  }
+
+  @When("I dismiss the cancellation confirmation")
+  public void dismissCancellation() {
+    page().onceDialog(dialog -> dialog.dismiss());
+    cancelReservationButton().click();
+  }
+
+  @When("I confirm cancellation for the {string} mini-kart")
+  public void confirmCancellation(String kartId) {
+    page().onceDialog(
+        dialog -> {
+          var message = dialog.message();
+          dialog.accept();
+          org.assertj.core.api.Assertions.assertThat(message)
+              .isEqualTo("Cancel your reservation for " + kartId + "?");
+        });
+    cancelReservationButton().click();
+  }
+
+  @Given("the cancellation request will be rejected")
+  public void rejectCancellationRequest() {
+    page().route(
+        "**/api/bookings/*",
+        route -> {
+          if (!route.request().method().equals("PATCH")) {
+            route.resume();
+            return;
+          }
+          route.fulfill(
+              new Route.FulfillOptions()
+                  .setStatus(409)
+                  .setContentType("application/json")
+                  .setBody("{\"message\":\"Only an active, unexpired reservation can be cancelled.\"}"));
+        });
+  }
+
+  @Then("I cannot cancel a reservation from my active trips")
+  public void noCancellationAction() {
+    PlaywrightAssertions.assertThat(cancelReservationButton()).hasCount(0);
+  }
+
+  private Locator cancelReservationButton() {
+    return page().getByRole(AriaRole.REGION, new Page.GetByRoleOptions().setName("Active trips"))
+        .getByRole(
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName("Cancel Reservation").setExact(true));
   }
 
   private Locator kartCard(String kartId) {

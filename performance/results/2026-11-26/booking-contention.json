@@ -1,0 +1,129 @@
+{
+  "suite": "booking-contention",
+  "duration_ms": 3084.156794,
+  "metrics": {
+    "dispatch_offset_ms": {
+      "p(99)": 1,
+      "max": 1,
+      "count": 20,
+      "avg": 1,
+      "min": 1,
+      "med": 1,
+      "p(95)": 1,
+      "thresholds": {
+        "min>=0": {
+          "ok": true
+        },
+        "max<250": {
+          "ok": true
+        }
+      }
+    },
+    "burst_network_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "data_received": {
+      "count": 6611,
+      "rate": 2143.5356376372347
+    },
+    "burst_latency_ms": {
+      "med": 47.887001,
+      "p(95)": 78.03169079999999,
+      "p(99)": 81.15521176,
+      "max": 81.936092,
+      "count": 20,
+      "avg": 47.04193505,
+      "min": 8.538318
+    },
+    "burst_http_5xx": {
+      "count": 0,
+      "rate": 0
+    },
+    "vus": {
+      "value": 20,
+      "min": 20,
+      "max": 20
+    },
+    "iteration_duration": {
+      "max": 3083.523748,
+      "count": 20,
+      "avg": 3048.4527156,
+      "min": 3010.106898,
+      "med": 3049.262866,
+      "p(95)": 3079.7196934,
+      "p(99)": 3082.76293708
+    },
+    "iterations": {
+      "count": 20,
+      "rate": 6.484754613938088
+    },
+    "burst_requests": {
+      "count": 20,
+      "rate": 6.484754613938088,
+      "thresholds": {
+        "count==20": {
+          "ok": true
+        }
+      }
+    },
+    "burst_successes": {
+      "count": 1,
+      "rate": 0.32423773069690437,
+      "thresholds": {
+        "count==1": {
+          "ok": true
+        }
+      }
+    },
+    "data_sent": {
+      "count": 12831,
+      "rate": 4160.29432257198
+    },
+    "vus_max": {
+      "value": 20,
+      "min": 20,
+      "max": 20
+    },
+    "burst_auth_failures": {
+      "count": 0,
+      "rate": 0
+    },
+    "burst_other_unexpected": {
+      "count": 0,
+      "rate": 0
+    },
+    "burst_http_5xx_rate": {
+      "rate": 0,
+      "passes": 0,
+      "fails": 1
+    },
+    "burst_conflicts": {
+      "rate": 6.160516883241183,
+      "count": 19,
+      "thresholds": {
+        "count==19": {
+          "ok": true
+        }
+      }
+    },
+    "burst_unexpected": {
+      "count": 0,
+      "rate": 0,
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    }
+  },
+  "k6_exit_code": 0,
+  "passed": true,
+  "postgres_read_only": {
+    "persisted_bookings": 1,
+    "active_bookings": 1,
+    "overlapping_pairs": 0,
+    "new_authorizations": 1,
+    "authorized_winning_booking": 1
+  }
+}

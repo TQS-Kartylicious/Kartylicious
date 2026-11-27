@@ -16,3 +16,14 @@ export async function getActiveBookings(token) {
   if (!response.ok) throw new Error('We could not load your active trips.')
   return response.json()
 }
+
+export async function cancelBooking(bookingId, token) {
+  const response = await apiFetch(`/api/bookings/${bookingId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'CANCELLED' }),
+  }, token)
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(body.message || 'We could not cancel this reservation.')
+  return body
+}

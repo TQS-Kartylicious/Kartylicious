@@ -1,0 +1,16 @@
+services:
+  db:
+    ports: !reset []
+    volumes:
+      - ./performance/init.sql:/docker-entrypoint-initdb.d/00-performance.sql:ro
+  backend:
+    ports: !override
+      - "127.0.0.1::8080"
+    environment:
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,metrics
+  k6:
+    image: grafana/k6:1.5.0
+    profiles: [performance]
+    volumes:
+      - ./performance:/performance:ro
+      - ./evidence:/evidence

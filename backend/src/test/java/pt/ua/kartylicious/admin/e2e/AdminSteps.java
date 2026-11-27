@@ -1,12 +1,12 @@
 package pt.ua.kartylicious.admin.e2e;
 
+import com.microsoft.playwright.APIRequestContext;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.microsoft.playwright.options.AriaRole;
-import com.microsoft.playwright.APIRequestContext;
 import com.microsoft.playwright.options.RequestOptions;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -29,14 +29,14 @@ public class AdminSteps {
   private String knownPassword;
   private String knownUserId;
 
-  @Before
+  @Before("@KARTY-76")
   public void startBrowser() {
     playwright = Playwright.create();
     browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
     page = browser.newPage();
   }
 
-  @After
+  @After("@KARTY-76")
   public void closeBrowser() {
     if (page != null) page.close();
     if (browser != null) browser.close();
@@ -54,7 +54,7 @@ public class AdminSteps {
     adminToken = loginAndGetToken(adminEmail, adminPassword);
     page.navigate(E2eSupport.baseUrl() + "/login");
     submitLogin(adminEmail, adminPassword);
-    page.waitForURL("**/dashboard");
+    page.waitForURL("**/admin/users");
   }
 
   @When("I create an operator account")

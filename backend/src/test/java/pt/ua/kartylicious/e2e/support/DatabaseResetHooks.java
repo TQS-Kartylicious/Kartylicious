@@ -1,31 +1,28 @@
 package pt.ua.kartylicious.e2e.support;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.cucumber.java.Before;
+import java.sql.Statement;
 
 public class DatabaseResetHooks {
 
-  @Before(value = "@KARTY-35 or @KARTY-36 or @KARTY-37", order = 0)
+  @Before(
+      value = "@KARTY-35 or @KARTY-36 or @KARTY-37 or @KARTY-38 or @KARTY-39 or @KARTY-40",
+      order = 0)
   public void resetFleetState() throws Exception {
-    Map<String, String> dotenv = loadDotenv();
-    String db = getConfig("POSTGRES_DB", dotenv, "kartylicious");
-    String user = getConfig("POSTGRES_USER", dotenv, "kartylicious");
-    String pass = getConfig("POSTGRES_PASSWORD", dotenv, "kartylicious");
-    String url =
-        System.getenv()
-            .getOrDefault("SPRING_DATASOURCE_URL", "jdbc:postgresql://localhost:5432/" + db);
-
-    try (Connection conn = DriverManager.getConnection(url, user, pass);
+    try (var conn = E2eDatabaseSupport.openConnection();
         Statement stmt = conn.createStatement()) {
+      stmt.executeUpdate("DELETE FROM payment_settlements");
+      stmt.executeUpdate("DELETE FROM payment_authorizations");
       stmt.executeUpdate("DELETE FROM rides");
       stmt.executeUpdate("DELETE FROM bookings");
+      stmt.executeUpdate("DELETE FROM maintenance_tickets");
+      stmt.executeUpdate("DELETE FROM fault_reports");
+      stmt.executeUpdate("UPDATE karts SET critical_fault = (id = 'K-303')");
+      stmt.executeUpdate(
+          "UPDATE karts SET hub_id = CASE "
+              + "WHEN id LIKE 'K-1%' THEN 'central-square' "
+              + "WHEN id LIKE 'K-2%' THEN 'riverside-park' "
+              + "ELSE 'university-gardens' END");
       stmt.executeUpdate(
           "UPDATE karts SET status = 'AVAILABLE' WHERE id IN ('K-101', 'K-102', 'K-301')");
       stmt.executeUpdate("UPDATE karts SET status = 'LOW_BATTERY' WHERE id = 'K-103'");
@@ -34,37 +31,12 @@ public class DatabaseResetHooks {
       stmt.executeUpdate(
           "UPDATE karts SET status = 'IN_MAINTENANCE' WHERE id IN ('K-106', 'K-303')");
       stmt.executeUpdate("UPDATE karts SET status = 'INACTIVE' WHERE id = 'K-302'");
+      stmt.executeUpdate(
+          "UPDATE karts SET locked = status <> 'IN_USE', telemetry_hub_id = NULL, "
+              + "telemetry_recorded_at = NULL");
+      stmt.executeUpdate(
+          "UPDATE hubs h SET capacity = "
+              + "(SELECT count(*) FROM karts k WHERE k.hub_id = h.id)");
     }
-  }
-
-  private static String getConfig(String key, Map<String, String> dotenv, String fallback) {
-    String env = System.getenv(key);
-    if (env != null && !env.isBlank()) {
-      return env;
-    }
-    return dotenv.getOrDefault(key, fallback);
-  }
-
-  private static Map<String, String> loadDotenv() {
-    Map<String, String> values = new HashMap<>();
-    for (Path path : new Path[] {Path.of("../.env"), Path.of(".env")}) {
-      if (Files.isRegularFile(path)) {
-        try {
-          for (String line : Files.readAllLines(path)) {
-            String trimmed = line.trim();
-            if (trimmed.isEmpty() || trimmed.startsWith("#") || !trimmed.contains("=")) {
-              continue;
-            }
-            int idx = trimmed.indexOf('=');
-            String k = trimmed.substring(0, idx).trim();
-            String v = trimmed.substring(idx + 1).trim().replaceAll("^[\"']|[\"']$", "");
-            values.put(k, v);
-          }
-        } catch (Exception ignored) {
-        }
-        break;
-      }
-    }
-    return values;
   }
 }

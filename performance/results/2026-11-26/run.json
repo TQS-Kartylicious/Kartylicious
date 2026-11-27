@@ -1,0 +1,10 @@
+{
+  "results": {
+    "telemetry": "PASS",
+    "booking": "PASS",
+    "discovery": "PASS",
+    "booking-contention": "PASS",
+    "return-contention": "PASS",
+    "health": "PASS"
+  }
+}

@@ -54,15 +54,17 @@ public class HubDirectoryService {
 
 
   private KartStatus displayStatus(Kart kart) {
+    if (!kart.active()
+        && (kart.status() == KartStatus.AVAILABLE
+            || kart.status() == KartStatus.RESERVED
+            || kart.status() == KartStatus.LOW_BATTERY)) {
+      return KartStatus.INACTIVE;
+    }
     if (kart.criticalFault()
         && (kart.status() == KartStatus.AVAILABLE
-            || kart.status() == KartStatus.INACTIVE
             || kart.status() == KartStatus.LOW_BATTERY
             || kart.status() == KartStatus.RESERVED)) {
       return KartStatus.IN_MAINTENANCE;
-    }
-    if (!kart.active() && kart.status() == KartStatus.AVAILABLE) {
-      return KartStatus.INACTIVE;
     }
     if (kart.status() == KartStatus.AVAILABLE
         && kart.batteryLevel() < MINIMUM_BATTERY_LEVEL) {

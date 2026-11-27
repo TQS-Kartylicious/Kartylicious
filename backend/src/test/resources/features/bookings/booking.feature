@@ -9,6 +9,7 @@ Feature: Reserve an available mini-kart
 
   Rule: A valid booking authorizes the security deposit and reserves the kart
 
+    @BR1 @BR2 @BR3 @BR7
     Scenario: Confirm a booking for an available mini-kart
       Given the "K-301" mini-kart is available at the "University Gardens" municipal hub
       When I select the "K-301" mini-kart
@@ -20,6 +21,7 @@ Feature: Reserve an available mini-kart
 
   Rule: A booking cannot exceed the municipality's maximum trip duration
 
+    @BR3
     Scenario: Reject a booking longer than the permitted duration
       Given the "K-101" mini-kart is available at the "Central Square" municipal hub
       When I select the "K-101" mini-kart

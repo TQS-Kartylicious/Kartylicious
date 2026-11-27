@@ -1,6 +1,7 @@
 package pt.ua.kartylicious.rides.persistence;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import pt.ua.kartylicious.rides.Ride;
@@ -25,5 +26,10 @@ public class JpaRideRepositoryAdapter implements RideRepository {
     return repository.findByUserIdAndStatus(userId, RideStatus.ACTIVE).stream()
         .map(JpaRideEntity::toRide)
         .toList();
+  }
+
+  @Override
+  public Optional<Ride> lockById(UUID rideId) {
+    return repository.lockById(rideId).map(JpaRideEntity::toRide);
   }
 }
